@@ -1,0 +1,37 @@
+/* Blueberry New Tab — Premium Arc/Linear */
+* { font-family: Inter, system-ui, -apple-system, sans-serif; box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #09090b; color: #fafafa; overflow: hidden; }
+#bg {
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(900px 500px at 20% 0%, rgba(99,102,241,0.18), transparent 60%),
+    radial-gradient(700px 400px at 90% 10%, rgba(236,72,153,0.12), transparent 60%),
+    radial-gradient(800px 600px at 50% 100%, rgba(16,185,129,0.06), transparent 60%),
+    #09090b;
+}
+#root { position: relative; height: 100%; display: flex; flex-direction: column; }
+.center { flex: 1; display: grid; place-items: center; padding: 24px; }
+.card {
+  width: 720px; max-width: 92vw;
+  background: rgba(24,24,27,0.72);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(63,63,70,0.6);
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+.pill {
+  display: flex; align-items: center; gap: 12px;
+  background: #18181b; border: 1px solid #27272a; border-radius: 999px;
+  padding: 10px 14px; transition: all 0.18s;
+}
+.pill:focus-within { border-color: rgba(99,102,241,0.5); box-shadow: 0 0 0 4px rgba(99,102,241,0.12); background: #1f1f23; }
+.quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+@media (max-width: 640px) { .quick { grid-template-columns: repeat(2, 1fr); } }
+.qa {
+  padding: 14px; border-radius: 16px; background: #18181b; border: 1px solid #27272a;
+  text-align: left; cursor: pointer; transition: all 0.18s;
+}
+.qa:hover { transform: translateY(-2px); border-color: #3f3f46; box-shadow: 0 8px 16px rgba(0,0,0,0.3); }
+.bg-blueberry { background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899); }
+.mono { font-family: 'JetBrains Mono', monospace; }

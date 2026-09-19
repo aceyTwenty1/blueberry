@@ -83,6 +83,15 @@ powershell -ExecutionPolicy Bypass -File scripts/start-sidecar.ps1
 
 **Ollama local (if you have it):** `http://localhost:11434` — no key, set `baseUrl` in providers. Background `aiRouter.ts:1` fetches directly (needs `<all_urls>` permission).
 
+**Real Browser (installable, no source build):**
+```powershell
+npm run build:firefox:extension
+powershell -ExecutionPolicy Bypass -File scripts/build-real-browser.ps1
+# → dist/Blueberry-Browser/ (348MB) — double-click Blueberry.bat
+# System addon + userChrome + autoconfig + isolated profile BlueberryProfile/
+```
+`scripts/build-real-browser.ps1:1` repacks installed Firefox (`C:\Program Files\Mozilla Firefox`) + `dist/firefox-extension` XPI as system addon. Premium: `newtab/index.html:1` Arc mesh + search + quick links, `sidebar/sidebar.css:1` glass + gradients, `userChrome.css:1` vertical tabs pill urlbar, `resources/icon-*.png:1` gradient ◐ icons + `icon.ico`.
+
 ---
 
 ## Full Fork Build (mozilla-central)
