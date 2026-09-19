@@ -1,0 +1,22 @@
+{
+  "policies": {
+    "DisableTelemetry": true,
+    "ExtensionSettings": {
+      "blueberry@blueberry.browser": {
+        "installation_mode": "force_installed",
+        "install_url": "file:///browser/extensions/blueberry@blueberry.browser.xpi",
+        "default_area": "menubar"
+      }
+    },
+    "Preferences": {
+      "browser.tabs.drawInTitlebar": { "Value": true, "Status": "default" },
+      "sidebar.verticalTabs": { "Value": true, "Status": "default" },
+      "browser.toolbars.bookmarks.visibility": { "Value": "always", "Status": "default" },
+      "extensions.pocket.enabled": { "Value": false, "Status": "locked" },
+      "browser.newtabpage.activity-stream.showSponsored": { "Value": false, "Status": "locked" }
+    },
+    "SearchEngines": {
+      "Default": "Google"
+    }
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "manifest_version": 2,
+  "name": "Blueberry — AI Native Browser",
+  "version": "0.1.0",
+  "description": "AI-native browser layer for Firefox — sidebar co-pilot, command palette, vertical tabs, page context",
+  "author": "Blueberry Contributors",
+  "homepage_url": "https://github.com/blueberry-browser/blueberry",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "storage",
+    "contextMenus",
+    "webNavigation",
+    "notifications",
+    "<all_urls>"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "blueberry@blueberry.browser",
+      "strict_min_version": "109.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+  "background": {
+    "scripts": ["background/background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/extractor.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "sidebar_action": {
+    "default_title": "Blueberry AI",
+    "default_panel": "sidebar/index.html",
+    "default_icon": "icons/icon-32.png",
+    "open_at_install": true
+  },
+  "browser_action": {
+    "default_title": "Blueberry — ⌘K",
+    "default_popup": "popup/index.html",
+    "default_icon": "icons/icon-32.png"
+  },
+  "commands": {
+    "_execute_sidebar_action": {
+      "suggested_key": { "default": "Ctrl+Shift+E" },
+      "description": "Toggle Blueberry AI Sidebar"
+    },
+    "blueberry-command-palette": {
+      "suggested_key": { "default": "Ctrl+Shift+K", "mac": "Command+Shift+K" },
+      "description": "Open Blueberry Command Palette"
+    },
+    "blueberry-vertical-tabs": {
+      "suggested_key": { "default": "Ctrl+Shift+T" },
+      "description": "Toggle Vertical Tabs"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "64": "icons/icon-64.png"
+  },
+  "web_accessible_resources": ["sidebar/*", "content/*"]
+}

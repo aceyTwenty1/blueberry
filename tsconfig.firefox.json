@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["firefox-webext-browser"],
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["src/shared/*"],
+      "@ai/*": ["src/ai/*"],
+      "@firefox/*": ["src/firefox/*"]
+    }
+  },
+  "include": ["src/firefox/**/*", "src/shared/**/*", "src/ai/**/*"]
+}

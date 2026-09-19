@@ -1,0 +1,25 @@
+# Blueberry — Firefox mozconfig (Gecko)
+# Copy to mozilla-central/mozconfig or set MOZCONFIG=../blueberry/mozconfig
+# See https://firefox-source-docs.mozilla.org/setup/configuring_build_options.html
+
+# Target — artifact build (fast, uses prebuilt Gecko) for UI iteration
+# For full Gecko build, comment next line and enable `ac_add_options --enable-application=browser`
+ac_add_options --enable-artifact-build
+ac_add_options --enable-application=browser
+
+# Branding — Blueberry (overlay in browser/branding/blueberry)
+ac_add_options --with-branding=browser/branding/blueberry
+
+# Distribution — include Blueberry policies + system addon
+# ac_add_options --with-distribution-id=blueberry
+
+# Optimization
+ac_add_options --enable-optimize
+ac_add_options --disable-debug
+ac_add_options --enable-lto
+
+# Languages
+ac_add_options --with-l10n-base=browser/locales
+
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-blueberry
+mk_add_options AUTOCLOBBER=1

@@ -1,0 +1,67 @@
+{
+  "name": "blueberry",
+  "version": "0.1.0",
+  "description": "Blueberry — AI-native open-source web browser (Gecko/Firefox + AI Co-Pilot)",
+  "private": true,
+  "type": "module",
+  "author": "Blueberry Contributors",
+  "license": "MPL-2.0",
+  "scripts": {
+    "dev": "npm run dev:firefox",
+    "dev:firefox": "npm run build:firefox:extension && web-ext run --source-dir dist/firefox-extension --target firefox-desktop",
+    "dev:firefox:reload": "web-ext run --source-dir dist/firefox-extension --reload",
+    "build": "npm run build:firefox",
+    "build:firefox": "npm run build:firefox:extension && npm run package:firefox",
+    "build:firefox:extension": "node scripts/build-firefox-extension.mjs",
+    "package:firefox": "web-ext build --source-dir dist/firefox-extension --artifacts-dir dist --overwrite-dest",
+    "lint:firefox": "web-ext lint --source-dir dist/firefox-extension",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.firefox.json",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
+    "typecheck:firefox": "tsc --noEmit -p tsconfig.firefox.json",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "postinstall": "echo \"Blueberry Gecko ready — run npm run dev:firefox with Firefox installed\"",
+    "sidecar": "python src/ai/local/server.py --model HuggingFaceTB/SmolLM2-135M-Instruct --port 11435 --puny",
+    "sidecar:135": "python src/ai/local/server.py --model HuggingFaceTB/SmolLM2-135M-Instruct --port 11435 --puny",
+    "sidecar:360": "python src/ai/local/server.py --model HuggingFaceTB/SmolLM2-360M-Instruct --port 11435 --puny",
+    "dev:electron": "electron-vite dev",
+    "build:electron": "electron-vite build",
+    "build:electron:win": "npm run build:electron && electron-builder --win --config electron-builder.yml",
+    "build:electron:mac": "npm run build:electron && electron-builder --mac --config electron-builder.yml",
+    "build:electron:linux": "npm run build:electron && electron-builder --linux --config electron-builder.yml"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "framer-motion": "^12.5.0",
+    "lucide-react": "^0.485.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@types/firefox-webext-browser": "^120.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "@tailwindcss/postcss": "^4.0.17",
+    "autoprefixer": "^10.4.21",
+    "electron": "^34.3.3",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^3.1.0",
+    "esbuild": "^0.25.0",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.0.17",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.5",
+    "web-ext": "^8.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "packageManager": "npm@11.19.0",
+  "webExt": {
+    "sourceDir": "dist/firefox-extension",
+    "artifactsDir": "dist"
+  }
+}

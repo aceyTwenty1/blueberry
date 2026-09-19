@@ -1,0 +1,16 @@
+# Blueberry 135M puny sidecar — same as Humaize light but even lighter
+# Reuses Humaize generator.py TextRewriter if D:\Humaize present, else minimal fallback
+
+torch --index-url https://download.pytorch.org/whl/cpu
+transformers>=4.44
+accelerate
+sentencepiece
+safetensors
+
+# Optional Iris Xe 2-3x boost (same as Humaize)
+# optimum-intel
+# openvino
+
+# If Humaize not found, these are optional for training (not needed for sidecar):
+# scikit-learn
+# joblib

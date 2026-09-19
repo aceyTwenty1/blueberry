@@ -1,0 +1,195 @@
+/* Blueberry — Premium Arc/Dia/Sweetberry userChrome.css for Gecko
+   Place in <profile>/chrome/userChrome.css
+   Requires: toolkit.legacyUserProfileCustomizations.stylesheets = true (set via autoconfig/blueberry.js)
+   Firefox ≥ 109 with sidebar.verticalTabs support
+*/
+
+/* ── Variables ── */
+:root {
+  --blueberry-bg: #09090b;
+  --blueberry-surface: #18181b;
+  --blueberry-surface-2: #1f1f23;
+  --blueberry-border: #27272a;
+  --blueberry-border-strong: #3f3f46;
+  --blueberry-accent: #6366f1;
+  --blueberry-accent-2: #8b5cf6;
+  --blueberry-radius: 12px;
+  --blueberry-radius-pill: 999px;
+}
+
+/* ── Window & Toolbox ── */
+#navigator-toolbox {
+  background: var(--blueberry-bg) !important;
+  border-bottom: 1px solid var(--blueberry-border) !important;
+}
+
+/* Hide horizontal tab bar entirely (Arc-style vertical tabs) */
+#TabsToolbar,
+#tabbrowser-tabs,
+#TabsToolbar-customization-target,
+.titlebar-spacer,
+#alltabs-button {
+  visibility: collapse !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+#nav-bar { 
+  background: var(--blueberry-bg) !important;
+  border-top: none !important;
+  box-shadow: none !important;
+  padding: 6px 8px !important;
+  gap: 6px;
+}
+
+/* ── Urlbar — Pill, Glass, Focus Glow ── */
+#urlbar {
+  --urlbar-height: 34px !important;
+}
+#urlbar-background {
+  background: var(--blueberry-surface) !important;
+  border: 1px solid var(--blueberry-border) !important;
+  border-radius: var(--blueberry-radius-pill) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+  transition: all 0.18s ease !important;
+}
+#urlbar[focused] #urlbar-background,
+#urlbar[open] #urlbar-background {
+  background: #1f1f23 !important;
+  border-color: rgba(99,102,241,0.5) !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15), 0 4px 12px rgba(0,0,0,0.3) !important;
+}
+#urlbar-input {
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+}
+#identity-icon,
+#tracking-protection-icon {
+  border-radius: 8px !important;
+}
+
+/* ── Toolbar Buttons — Rounded, Subtle Hover ── */
+.toolbarbutton-1,
+#PanelUI-menu-button {
+  border-radius: 10px !important;
+  padding: 4px !important;
+}
+.toolbarbutton-1:hover,
+#PanelUI-menu-button:hover {
+  background: var(--blueberry-surface) !important;
+  border-color: var(--blueberry-border) !important;
+}
+.toolbarbutton-icon {
+  border-radius: 8px !important;
+}
+
+/* ── Sidebar — Premium, Rounded, Shadow ── */
+#sidebar-box {
+  min-width: 280px !important;
+  max-width: 420px !important;
+  background: var(--blueberry-bg) !important;
+  border-right: 1px solid var(--blueberry-border) !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  /* subtle inner shadow */
+  box-shadow: inset -1px 0 0 rgba(255,255,255,0.04) !important;
+}
+#sidebar {
+  border-radius: 0 !important;
+  background: var(--blueberry-bg) !important;
+}
+#sidebar-header {
+  background: rgba(24,24,27,0.9) !important;
+  backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid var(--blueberry-border) !important;
+  padding: 8px 10px !important;
+}
+#sidebar-title {
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Sidebar splitter */
+#sidebar-splitter {
+  width: 1px !important;
+  background: var(--blueberry-border) !important;
+  border: none !important;
+}
+
+/* ── Bookmarks Bar — Subtle ── */
+#PersonalToolbar {
+  background: var(--blueberry-bg) !important;
+  border-bottom: 1px solid var(--blueberry-border) !important;
+  padding: 4px 8px !important;
+}
+.bookmark-item {
+  border-radius: 8px !important;
+  padding: 4px 8px !important;
+}
+
+/* ── Findbar, Panels ── */
+#browser {
+  background: var(--blueberry-bg) !important;
+}
+.browserContainer {
+  background: #0a0a0f !important;
+}
+
+/* ── Scrollbars in Chrome ── */
+* {
+  scrollbar-width: thin !important;
+  scrollbar-color: #3f3f46 transparent !important;
+}
+
+/* ── Extensions Button — Blueberry Accent ── */
+#unified-extensions-button {
+  background: var(--blueberry-surface) !important;
+  border: 1px solid var(--blueberry-border) !important;
+  border-radius: 10px !important;
+}
+#unified-extensions-button:hover {
+  border-color: var(--blueberry-border-strong) !important;
+}
+
+/* ── Window Controls (macOS traffic lights spacing) ── */
+.titlebar-buttonbox-container {
+  margin-right: 8px !important;
+}
+
+/* ── Context Menu — Dark, Rounded ── */
+menupopup, panel {
+  --panel-background: #18181b !important;
+  --panel-border-color: #3f3f46 !important;
+  --panel-border-radius: 12px !important;
+}
+
+/* ── New Tab Background ── */
+#tabbrowser-tabpanels {
+  background: #09090b !important;
+}
+
+/* ── Vertical Tabs Tweaks (when sidebar.verticalTabs enabled, Firefox 131+) ── */
+@media (-moz-bool-pref: "sidebar.verticalTabs") {
+  #vertical-tabs {
+    background: var(--blueberry-bg) !important;
+    border-right: 1px solid var(--blueberry-border) !important;
+  }
+}
+
+/* ── Blueberry Watermark in Nav Bar (subtle) ── */
+#nav-bar::after {
+  content: "Blueberry • Gecko";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #52525b;
+  opacity: 0.6;
+  pointer-events: none;
+  display: none; /* enable if you want watermark — set to block */
+}

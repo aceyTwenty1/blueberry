@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "lib": ["ESNext"],
+    "types": ["node", "electron"],
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["src/shared/*"],
+      "@ai/*": ["src/ai/*"],
+      "@/*": ["src/renderer/src/*"]
+    }
+  },
+  "include": ["src/main/**/*", "src/preload/**/*", "src/ai/**/*", "src/shared/**/*", "electron.vite.config.ts"]
+}
