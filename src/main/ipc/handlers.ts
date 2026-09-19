@@ -98,24 +98,79 @@ export function registerIpcHandlers(viewManager: ViewManager): void {
     store.setProvider(config)
   })
 
-  // AI chat (Step 1: echo/mock; real streaming wired in Step 4/5)
+  // AI chat — now wired to local 135M sidecar + cloud (Gecko aiRouter parity)
+  // For local-smollm135/ollama we fetch http://localhost:11435/11434 (Ollama-compatible NDJSON)
+  async function fetchLocalChat(req: ChatRequest, cfg: AIProviderConfig): Promise<string> {
+    const url = `${cfg.baseUrl ?? (cfg.id === 'local-smollm135' ? 'http://localhost:11435' : 'http://localhost:11434')}/api/chat`
+    const body = { model: cfg.model, messages: req.messages.map(m => ({ role: m.role, content: m.content })), stream: false }
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    if (!res.ok) throw new Error(`${cfg.id} ${res.status}: ${await res.text()}`)
+    const j = await res.json() as { message?: { content: string }; response?: string; generated_text?: string }
+    return j.message?.content ?? j.response ?? j.generated_text ?? JSON.stringify(j).slice(0, 2000)
+  }
+
   ipcMain.handle('ai:chat', async (_e, req: ChatRequest): Promise<string> => {
-    // Minimal stub: returns a formatted echo so UI can be tested without keys.
-    // Real provider routing (Ollama/OpenAI/Anthropic/Gemini) lands in src/ai/providers/* in Step 4.
+    const cfg = store.getProvider(req.providerId) ?? store.getProviders()[0]!
+    // Local open-source (free) — try sidecar first, fallback to mock
+    if (req.providerId === 'local-smollm135' || req.providerId === 'ollama' || req.providerId.startsWith('local-')) {
+      try { return await fetchLocalChat(req, cfg) } catch (e) {
+        const last = req.messages[req.messages.length - 1]?.content ?? ''
+        return `**Blueberry AI (${cfg.id} — sidecar not running)**\n\nStart it: \`powershell -ExecutionPolicy Bypass -File scripts/start-sidecar.ps1\`\n\nError: ${String(e).slice(0,300)}\n\nEcho: ${last.slice(0,200)}`
+      }
+    }
+    // Cloud or missing key — return helpful mock
+    if (!cfg.apiKey && cfg.id !== 'ollama' && !cfg.id.startsWith('local-')) {
+      const last = req.messages[req.messages.length - 1]?.content ?? ''
+      return `**[${cfg.id} — no API key]** Configure in Settings. Echo: ${last.slice(0,200)}`
+    }
+    // Fallback mock (cloud not yet wired in Electron main — use Firefox aiRouter for full cloud)
     const last = req.messages[req.messages.length - 1]?.content ?? ''
     const ctx = req.context ? `\n\n[Page: ${req.context.title} — ${req.context.url}]` : ''
-    return `**Blueberry AI (mock — ${req.providerId})**\n\nYou said: ${last}${ctx}\n\n> Provider integration lands in Step 4. Configure keys in Settings.`
+    return `**Blueberry AI (${req.providerId})**\n\nYou said: ${last}${ctx}\n\n> Cloud providers via Firefox aiRouter; local 135M works now.`
   })
 
   ipcMain.handle('ai:chatStream', async (event, req: ChatRequest): Promise<void> => {
-    // Mock streaming: chunk the same mock response
-    const full = `**Blueberry AI (stream mock — ${req.providerId})**\n\nYou said: ${req.messages[req.messages.length - 1]?.content ?? ''}\n\nStreaming support will use ReadableStream in Step 4.`
+    const cfg = store.getProvider(req.providerId) ?? store.getProviders()[0]!
     const id = `chunk-${Date.now()}`
+    // Try real streaming for local sidecar
+    if (req.providerId === 'local-smollm135' || req.providerId === 'ollama' || req.providerId.startsWith('local-')) {
+      try {
+        const url = `${cfg.baseUrl ?? (cfg.id === 'local-smollm135' ? 'http://localhost:11435' : 'http://localhost:11434')}/api/chat`
+        const body = { model: cfg.model, messages: req.messages.map(m => ({ role: m.role, content: m.content })), stream: true }
+        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        if (!res.ok || !res.body) throw new Error(`stream ${res.status}`)
+        const reader = (res.body as unknown as ReadableStream<Uint8Array>).getReader()
+        const decoder = new TextDecoder()
+        let buf = ''
+        while (true) {
+          const { done, value } = await reader.read() as { done: boolean; value?: Uint8Array }
+          if (done) break
+          buf += decoder.decode(value!, { stream: true })
+          const lines = buf.split('\n')
+          buf = lines.pop() ?? ''
+          for (const line of lines) {
+            if (!line.trim()) continue
+            try {
+              const j = JSON.parse(line) as { message?: { content: string }; done?: boolean }
+              if (j.message?.content) event.sender.send('ai:chunk', { id, delta: j.message.content, done: false })
+              if (j.done) { event.sender.send('ai:chunk', { id, delta: '', done: true }); return }
+            } catch {}
+          }
+        }
+        event.sender.send('ai:chunk', { id, delta: '', done: true })
+        return
+      } catch (e) {
+        event.sender.send('ai:chunk', { id, delta: `Error (${cfg.id}): ${String(e).slice(0,300)}`, done: false })
+        event.sender.send('ai:chunk', { id, delta: '', done: true })
+        return
+      }
+    }
+    // Fallback mock stream
+    const full = `**Blueberry AI (stream — ${req.providerId})**\n\nYou said: ${req.messages[req.messages.length - 1]?.content ?? ''}\n\nStart local sidecar for real streaming: scripts/start-sidecar.ps1`
     const words = full.split(/(\s+)/)
     for (let i = 0; i < words.length; i++) {
       const chunk = words[i]!
       event.sender.send('ai:chunk', { id, delta: chunk, done: false })
-      // small delay to simulate token streaming
       await new Promise((r) => setTimeout(r, 12))
     }
     event.sender.send('ai:chunk', { id, delta: '', done: true })
