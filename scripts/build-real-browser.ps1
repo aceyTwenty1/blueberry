@@ -67,25 +67,39 @@ $launcherPs = @'
 $exe = Join-Path $PSScriptRoot "firefox.exe"
 $profile = Join-Path $PSScriptRoot "BlueberryProfile"
 if (-not (Test-Path $profile)) { New-Item -ItemType Directory -Force -Path $profile | Out-Null }
-# First run: install userChrome.css into profile chrome
 $chrome = Join-Path $profile "chrome"
 if (-not (Test-Path (Join-Path $chrome "userChrome.css"))) {
   New-Item -ItemType Directory -Force -Path $chrome | Out-Null
-  Copy-Item -Force (Join-Path $PSScriptRoot "distribution\..\..\src\firefox\userChrome.css") (Join-Path $chrome "userChrome.css") -ErrorAction SilentlyContinue
-  # fallback: try absolute
+  Copy-Item -Force "D:\Blueberry\src\firefox\userChrome.css" (Join-Path $chrome "userChrome.css") -ErrorAction SilentlyContinue
   if (-not (Test-Path (Join-Path $chrome "userChrome.css"))) {
-    Copy-Item -Force "D:\Blueberry\src\firefox\userChrome.css" (Join-Path $chrome "userChrome.css") -ErrorAction SilentlyContinue
+    Copy-Item -Force (Join-Path $PSScriptRoot "..\..\src\firefox\userChrome.css") (Join-Path $chrome "userChrome.css") -ErrorAction SilentlyContinue
   }
 }
-Start-Process $exe -ArgumentList "-profile `"$profile`" -no-remote"
+Write-Host "[Blueberry] Launching $exe with profile $profile"
+try { Start-Process $exe -ArgumentList "-profile `"$profile`" -no-remote" -ErrorAction Stop } catch {
+  Start-Process $exe -ArgumentList "-profile `"$profile`" -new-instance"
+}
 '@
 Set-Content -LiteralPath (Join-Path $outRoot "Blueberry.ps1") -Value $launcherPs -Encoding UTF8
-# Also create a .bat launcher for double-click without powershell restriction
+# Also create a .bat launcher for double-click without powershell restriction (fixed: handles already-running Firefox)
 Set-Content -LiteralPath (Join-Path $outRoot "Blueberry.bat") -Value '@echo off
+REM Blueberry Browser Launcher (Fixed)
+setlocal
 set "PROFILE=%~dp0BlueberryProfile"
-if not exist "%PROFILE%\chrome" mkdir "%PROFILE%\chrome"
-if not exist "%PROFILE%\chrome\userChrome.css" copy /Y "D:\Blueberry\src\firefox\userChrome.css" "%PROFILE%\chrome\userChrome.css" >nul 2>&1
+set "SRC_USERCHROME=D:\Blueberry\src\firefox\userChrome.css"
+if not exist "%PROFILE%\chrome" mkdir "%PROFILE%\chrome" >nul 2>&1
+if not exist "%PROFILE%\chrome\userChrome.css" (
+  if exist "%SRC_USERCHROME%" copy /Y "%SRC_USERCHROME%" "%PROFILE%\chrome\userChrome.css" >nul 2>&1
+)
+echo [Blueberry] Launching Firefox with profile: %PROFILE%
 start "" "%~dp0firefox.exe" -profile "%PROFILE%" -no-remote
+timeout /t 2 /nobreak >nul
+tasklist /FI "IMAGENAME eq firefox.exe" 2>nul | find /I "firefox.exe" >nul
+if errorlevel 1 (
+  echo [Blueberry] Retrying with -new-instance...
+  start "" "%~dp0firefox.exe" -profile "%PROFILE%" -new-instance
+)
+endlocal
 ' -Encoding Ascii
 Write-Host "[Blueberry] Created Blueberry.bat + Blueberry.ps1 launchers (profile-isolated)" -ForegroundColor Green
 
