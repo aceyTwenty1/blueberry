@@ -1,55 +1,94 @@
 @echo off
-REM Blueberry - Startup Script (double-click to launch real browser)
-REM Starts sidecar (135M puny, if available) + Blueberry Gecko browser
-REM Usage: double-click this file, or put shortcut in shell:startup for autostart
-
-setlocal
+REM Blueberry - Startup (Fixed: visible, logs, no hidden /min)
+setlocal EnableDelayedExpansion
 set "ROOT=%~dp0"
+if "%ROOT:~-1%" neq "\" set "ROOT=%ROOT%\"
 set "BROWSER=%ROOT%dist\Blueberry-Browser\Blueberry.bat"
 set "SIDECAR=%ROOT%src\ai\local\server.py"
 set "VENV=%ROOT%.venv\Scripts\python.exe"
+set "LOG=%ROOT%blueberry-startup.log"
 
+echo [%date% %time%] Starting Blueberry > "%LOG%"
 echo [Blueberry] Starting...
+echo [Blueberry] ROOT=%ROOT%
+echo [Blueberry] BROWSER=%BROWSER%
+echo [Blueberry] SIDECAR=%SIDECAR%
 
-REM 1. Check real browser exists, build if missing
+REM 1. Ensure real browser exists
 if not exist "%BROWSER%" (
-  echo [Blueberry] Real browser not found at %BROWSER%
-  echo [Blueberry] Building extension + repack (first run ~20s)...
+  echo [Blueberry] Real browser not found, building...
+  echo [Blueberry] Building extension...
   pushd "%ROOT%"
-  call npm run build:firefox:extension >nul 2>&1
-  powershell -ExecutionPolicy Bypass -File scripts\build-real-browser.ps1
+  where npm >nul 2>&1
+  if errorlevel 1 (
+    echo [ERROR] npm not found on PATH. Install Node.js 18+ and add to PATH.
+    echo [ERROR] npm not found >> "%LOG%"
+    pause
+    exit /b 1
+  )
+  call npm run build:firefox:extension
+  if errorlevel 1 (
+    echo [ERROR] Extension build failed. See above.
+    pause
+    exit /b 1
+  )
+  echo [Blueberry] Repacking Firefox...
+  powershell -ExecutionPolicy Bypass -File "%ROOT%scripts\build-real-browser.ps1"
+  if errorlevel 1 (
+    echo [ERROR] Browser repack failed.
+    pause
+    exit /b 1
+  )
   popd
 )
 
-REM 2. Start 135M sidecar in background if python sidecar exists and not already running
-netstat -ano | findstr ":11435" >nul 2>&1
-if %errorlevel% neq 0 (
-  if exist "%SIDECAR%" (
-    echo [Blueberry] Starting 135M puny sidecar on http://127.0.0.1:11435 ...
-    if exist "%VENV%" (
-      start "" /min "%VENV%" "%SIDECAR%" --model HuggingFaceTB/SmolLM2-135M-Instruct --port 11435 --puny
-    ) else (
-      start "" /min python "%SIDECAR%" --model HuggingFaceTB/SmolLM2-135M-Instruct --port 11435 --puny
-    )
-    timeout /t 2 >nul
-  ) else (
-    echo [Blueberry] Sidecar not found, skipping (browser will run without local AI)
-  )
-) else (
+REM 2. Check if sidecar already running (use powershell test, more reliable than netstat)
+powershell -Command "try { $c=New-Object System.Net.Sockets.TcpClient('127.0.0.1',11435); $c.Close(); exit 0 } catch { exit 1 }" >nul 2>&1
+if %errorlevel% equ 0 (
   echo [Blueberry] Sidecar already running on :11435
+) else (
+  if exist "%SIDECAR%" (
+    echo [Blueberry] Starting 135M sidecar (this takes 30-60s first run, downloads 280MB once)...
+    echo [Blueberry] Starting sidecar... >> "%LOG%"
+    if exist "%VENV%" (
+      echo [Blueberry] Using .venv python: %VENV%
+      start "Blueberry Sidecar" "%VENV%" "%SIDECAR%" --model HuggingFaceTB/SmolLM2-135M-Instruct --port 11435 --puny --host 127.0.0.1
+    ) else (
+      where python >nul 2>&1
+      if errorlevel 1 (
+        echo [WARN] python not found, skipping sidecar (browser will run without local AI)
+        echo [WARN] Install python 3.10+ or run scripts\start-sidecar.ps1 to create .venv
+      ) else (
+        echo [Blueberry] Using system python
+        start "Blueberry Sidecar" python "%SIDECAR%" --model HuggingFaceTB/SmolLM2-135M-Instruct --port 11435 --puny --host 127.0.0.1
+      )
+    )
+    echo [Blueberry] Waiting 3s for sidecar to initialize...
+    timeout /t 3 /nobreak >nul
+  ) else (
+    echo [Blueberry] Sidecar not found at %SIDECAR%, skipping.
+  )
 )
 
-REM 3. Launch real browser (isolated profile)
+REM 3. Launch browser - check again
 if exist "%BROWSER%" (
   echo [Blueberry] Launching browser...
-  start "" "%BROWSER%"
+  echo [Blueberry] Running: "%BROWSER%"
+  call "%BROWSER%"
+  if errorlevel 1 (
+    echo [ERROR] Browser launch failed with code %errorlevel%
+    echo [ERROR] Try closing Firefox completely and run again.
+    pause
+    exit /b 1
+  )
+  echo [Blueberry] Browser launched. If you don't see a window, close all Firefox and try again.
 ) else (
-  echo [Blueberry] Fallback: launching Firefox with extension
+  echo [Blueberry] Real browser missing, fallback to web-ext...
   pushd "%ROOT%"
-  start "" powershell -ExecutionPolicy Bypass -File scripts\start-sidecar.ps1
   npm run dev:firefox
   popd
 )
 
-echo [Blueberry] Done.
+echo [Blueberry] Done. This window will close in 5s. Check blueberry-startup.log for details.
+timeout /t 5
 endlocal
