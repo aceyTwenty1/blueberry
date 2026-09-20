@@ -63,7 +63,9 @@ const api = {
     chat: (req: Parameters<IpcInvokeMap['ai:chat']>[0]) =>
       ipcRenderer.invoke('ai:chat', req) as unknown as Promise<ReturnType<IpcInvokeMap['ai:chat']>>,
     chatStream: (req: Parameters<IpcInvokeMap['ai:chatStream']>[0]) =>
-      ipcRenderer.invoke('ai:chatStream', req)
+      ipcRenderer.invoke('ai:chatStream', req),
+    agentRun: (req: Parameters<IpcInvokeMap['ai:agentRun']>[0]) =>
+      ipcRenderer.invoke('ai:agentRun', req) as unknown as Promise<ReturnType<IpcInvokeMap['ai:agentRun']>>
   },
 
   app: {

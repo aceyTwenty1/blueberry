@@ -10,6 +10,8 @@ import type { PageContext, AIProviderConfig } from '../../../shared/types/ai'
 import { DEFAULT_SPACES, DEFAULT_AI_PROVIDERS } from '../../../shared/constants/defaults'
 import { chatGecko, chatStreamGecko } from './aiRouter'
 import { encryptProviders, decryptProviders } from './crypto'
+import { runAgentGecko } from './agent'
+import type { AgentRunRequest } from '../../../shared/types/agent'
 
 // Gecko WebExtension globals — types provided by @types/firefox-webext-browser (tsconfig.firefox.json)
 // `browser` is global in MV2 background; no custom shim needed.
@@ -127,6 +129,28 @@ browser.runtime.onMessage.addListener(async (msg: unknown, sender: unknown) => {
           await browser.runtime.sendMessage({ type: 'BLUEBERRY_CHUNK', payload: { delta: `Error: ${String(e).slice(0, 400)}`, done: false } }).catch(() => {})
         } finally {
           await browser.runtime.sendMessage({ type: 'BLUEBERRY_CHUNK', payload: { delta: '', done: true } }).catch(() => {})
+        }
+      })()
+      return { ok: true, streaming: true }
+    }
+    case 'BLUEBERRY_AGENT_RUN': {
+      const req = m.payload as AgentRunRequest
+      ;(async () => {
+        try {
+          await runAgentGecko(
+            req,
+            async () => {
+              const providers = await getProviders()
+              return providers.find((p) => p.id === req.providerId) ?? providers[0]!
+            },
+            async (e) => {
+              await browser.runtime.sendMessage({ type: 'BLUEBERRY_AGENT_EVENT', payload: e }).catch(() => {})
+            }
+          )
+        } catch (e) {
+          await browser.runtime
+            .sendMessage({ type: 'BLUEBERRY_AGENT_EVENT', payload: { type: 'error', message: String(e).slice(0, 300) } })
+            .catch(() => {})
         }
       })()
       return { ok: true, streaming: true }

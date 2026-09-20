@@ -1,5 +1,6 @@
 import type { Tab, TabId, Space, SpaceId, CreateTabOptions, TabUpdatePayload, NavigationAction } from './tab'
 import type { AIProviderConfig, AIProviderId, ChatRequest, ChatChunk, PageContext } from './ai'
+import type { AgentEvent, AgentRunRequest } from './agent'
 
 /**
  * IPC channel definitions — strict typing for contextBridge.
@@ -30,6 +31,7 @@ export interface IpcInvokeMap {
   'ai:setProvider': (config: AIProviderConfig) => void
   'ai:chat': (req: ChatRequest) => string // non-stream fallback
   'ai:chatStream': (req: ChatRequest) => void // stream via events
+  'ai:agentRun': (req: AgentRunRequest) => { ok: boolean; answer: string } // streams AgentEvent via ai:agentEvent
 
   // App
   'app:getVersion': () => string
@@ -40,6 +42,7 @@ export interface IpcOnMap {
   'tabs:updated': (payload: TabUpdatePayload) => void
   'ai:chunk': (chunk: ChatChunk) => void
   'ai:error': (error: string) => void
+  'ai:agentEvent': (event: AgentEvent) => void
 }
 
 export type IpcInvokeChannel = keyof IpcInvokeMap

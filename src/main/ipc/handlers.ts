@@ -7,6 +7,8 @@ import type { ViewManager } from '../windows/viewManager'
 import { store } from '../utils/store'
 import type { CreateTabOptions, TabId, TabUpdatePayload } from '@shared/types/tab'
 import type { AIProviderConfig, AIProviderId, ChatRequest, PageContext } from '@shared/types/ai'
+import type { AgentRunRequest } from '@shared/types/agent'
+import { runAgentElectron } from '../ai/agentRunner'
 import { DEFAULT_URL } from '@shared/constants/defaults'
 import { normalizeUrl } from '@shared/utils/helpers'
 
@@ -189,6 +191,19 @@ export function registerIpcHandlers(viewManager: ViewManager): void {
       await new Promise((r) => setTimeout(r, 12))
     }
     event.sender.send('ai:chunk', { id, delta: '', done: true })
+  })
+
+  ipcMain.handle('ai:agentRun', async (event, req: AgentRunRequest) => {
+    try {
+      const answer = await runAgentElectron(viewManager, req, (e) => {
+        event.sender.send('ai:agentEvent', e)
+      })
+      return { ok: true as const, answer }
+    } catch (e) {
+      const message = String(e).slice(0, 300)
+      event.sender.send('ai:agentEvent', { type: 'error', message })
+      return { ok: false as const, answer: message }
+    }
   })
 
   ipcMain.handle('app:getVersion', () => app.getVersion())

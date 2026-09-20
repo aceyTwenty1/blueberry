@@ -54,6 +54,7 @@ for (const e of entries) {
     format: 'iife',
     external: [],
     define: { 'process.env.NODE_ENV': '"production"' },
+    alias: { '@shared': './src/shared', '@ai': './src/ai' }
   })
   console.log(`[build] ${e.in} → ${e.out}`)
 }
