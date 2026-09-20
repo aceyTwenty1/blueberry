@@ -9,6 +9,7 @@ import type { Tab, Space } from '../../../shared/types/tab'
 import type { PageContext, AIProviderConfig } from '../../../shared/types/ai'
 import { DEFAULT_SPACES, DEFAULT_AI_PROVIDERS } from '../../../shared/constants/defaults'
 import { chatGecko, chatStreamGecko } from './aiRouter'
+import { encryptProviders, decryptProviders } from './crypto'
 
 // Gecko WebExtension globals — types provided by @types/firefox-webext-browser (tsconfig.firefox.json)
 // `browser` is global in MV2 background; no custom shim needed.
@@ -18,7 +19,14 @@ const STORAGE_KEYS = { providers: 'blueberry:providers', spaces: 'blueberry:spac
 
 async function getProviders(): Promise<AIProviderConfig[]> {
   const data = await browser.storage.local.get(STORAGE_KEYS.providers)
-  return (data[STORAGE_KEYS.providers] as AIProviderConfig[]) ?? DEFAULT_AI_PROVIDERS
+  const stored = data[STORAGE_KEYS.providers] as Array<Record<string, unknown>> | undefined
+  if (!stored) return DEFAULT_AI_PROVIDERS
+  try {
+    const dec = (await decryptProviders(stored)) as unknown as AIProviderConfig[]
+    return dec
+  } catch {
+    return stored as unknown as AIProviderConfig[]
+  }
 }
 
 async function saveProvider(config: AIProviderConfig): Promise<void> {
@@ -26,7 +34,8 @@ async function saveProvider(config: AIProviderConfig): Promise<void> {
   const idx = providers.findIndex((p) => p.id === config.id)
   if (idx >= 0) providers[idx] = config
   else providers.push(config)
-  await browser.storage.local.set({ [STORAGE_KEYS.providers]: providers })
+  const enc = (await encryptProviders(providers as Array<{ apiKey?: string }>)) as AIProviderConfig[]
+  await browser.storage.local.set({ [STORAGE_KEYS.providers]: enc })
 }
 
 // Page context extraction — delegates to content script extractor.ts
@@ -63,15 +72,16 @@ browser.runtime.onMessage.addListener(async (msg: unknown, sender: unknown) => {
       return extractPageContext(tabId)
     }
     case 'BLUEBERRY_CHAT': {
-      const { providerId, messages, context } = m.payload as {
+      const { providerId, messages, context, task } = m.payload as {
         providerId: string
         messages: Array<{ role: string; content: string }>
         context?: PageContext
+        task?: string
       }
       const providers = await getProviders()
       const cfg = providers.find((p) => p.id === providerId) ?? providers[0]!
-      // If no key and not ollama, return mock with helpful hint
-      if (!cfg.apiKey && cfg.id !== 'ollama') {
+      // If no key and not local, return mock with helpful hint
+      if (!cfg.apiKey && cfg.id !== 'ollama' && !cfg.id.startsWith('local-')) {
         const last = messages[messages.length - 1]?.content ?? ''
         return { text: `[${cfg.id} — no API key set] Configure in Blueberry Settings. Echo: ${last.slice(0, 120)}` }
       }
@@ -80,8 +90,9 @@ browser.runtime.onMessage.addListener(async (msg: unknown, sender: unknown) => {
           {
             messages: messages.map((msg) => ({ id: 'm', role: msg.role as 'user' | 'assistant', content: msg.content, timestamp: Date.now() })),
             providerId: providerId as never,
-            context: context as never
-          } as never,
+            context: context as never,
+            task: task as never
+          } as unknown as never,
           cfg
         )
         return { text }
@@ -90,17 +101,14 @@ browser.runtime.onMessage.addListener(async (msg: unknown, sender: unknown) => {
       }
     }
     case 'BLUEBERRY_CHAT_STREAM': {
-      const { providerId, messages, context } = m.payload as {
+      const { providerId, messages, context, task } = m.payload as {
         providerId: string
         messages: Array<{ role: string; content: string }>
         context?: PageContext
+        task?: string
       }
       const providers = await getProviders()
       const cfg = providers.find((p) => p.id === providerId) ?? providers[0]!
-      // Stream via runtime messages: background -> sidebar
-      // sender is sidebar tab; we need to message back
-      const senderTab = (sender as { tab?: { id?: number } })?.tab
-      const target = (sender as unknown as { id?: string }) // extension page has no tab id
       ;(async () => {
         try {
           for await (const delta of chatStreamGecko(
@@ -108,8 +116,9 @@ browser.runtime.onMessage.addListener(async (msg: unknown, sender: unknown) => {
               messages: messages.map((msg) => ({ id: 'm', role: msg.role as 'user' | 'assistant', content: msg.content, timestamp: Date.now() })),
               providerId: providerId as never,
               context: context as never,
+              task: task as never,
               stream: true
-            } as never,
+            } as unknown as never,
             cfg
           )) {
             await browser.runtime.sendMessage({ type: 'BLUEBERRY_CHUNK', payload: { delta, done: false } }).catch(() => {})

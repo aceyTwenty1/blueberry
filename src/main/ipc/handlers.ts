@@ -100,9 +100,24 @@ export function registerIpcHandlers(viewManager: ViewManager): void {
 
   // AI chat — now wired to local 135M sidecar + cloud (Gecko aiRouter parity)
   // For local-smollm135/ollama we fetch http://localhost:11435/11434 (Ollama-compatible NDJSON)
+  const SYSTEM_PROMPTS: Record<string, string> = {
+    summarize: 'You are Blueberry AI, an expert web summarizer. Produce concise bullet points, preserve key facts, numbers, and links. Use markdown.',
+    qa: 'You are Blueberry AI. Answer questions grounded in the provided page context. Cite snippets. If not in context, say so.',
+    extract: 'You are Blueberry AI. Extract structured data as requested, return valid JSON or markdown tables.',
+    general: 'You are Blueberry AI, a helpful in-browser co-pilot. Be concise, friendly, and web-aware.'
+  }
+  function buildSystemPrompt(task: string, ctx?: PageContext): string {
+    const base = (SYSTEM_PROMPTS as Record<string, string>)[task] ?? SYSTEM_PROMPTS.general
+    if (!ctx) return base
+    return `${base}\n\n## Page Context\nTitle: ${ctx.title}\nURL: ${ctx.url}\n\n${ctx.markdown.slice(0, 6000)}`
+  }
+
   async function fetchLocalChat(req: ChatRequest, cfg: AIProviderConfig): Promise<string> {
+    const task = (req as unknown as { task?: string }).task ?? 'general'
+    const system = buildSystemPrompt(task, req.context)
+    const messages = [{ role: 'system', content: system }, ...req.messages.filter(m => m.role !== 'system').map(m => ({ role: m.role, content: m.content }))]
     const url = `${cfg.baseUrl ?? (cfg.id === 'local-smollm135' ? 'http://localhost:11435' : 'http://localhost:11434')}/api/chat`
-    const body = { model: cfg.model, messages: req.messages.map(m => ({ role: m.role, content: m.content })), stream: false }
+    const body = { model: cfg.model, messages, stream: false }
     const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     if (!res.ok) throw new Error(`${cfg.id} ${res.status}: ${await res.text()}`)
     const j = await res.json() as { message?: { content: string }; response?: string; generated_text?: string }

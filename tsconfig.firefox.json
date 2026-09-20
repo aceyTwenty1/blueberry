@@ -20,5 +20,5 @@
       "@firefox/*": ["src/firefox/*"]
     }
   },
-  "include": ["src/firefox/**/*", "src/shared/**/*", "src/ai/**/*"]
+  "include": ["src/firefox/**/*", "src/shared/**/*", "src/ai/**/*", "src/types/**/*"]
 }

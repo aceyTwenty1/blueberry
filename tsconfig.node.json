@@ -11,8 +11,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "lib": ["ESNext"],
-    "types": ["node", "electron"],
+    "lib": ["ESNext", "DOM"],
+    "types": ["node", "electron", "jsdom"],
     "baseUrl": ".",
     "paths": {
       "@shared/*": ["src/shared/*"],
@@ -20,5 +20,5 @@
       "@/*": ["src/renderer/src/*"]
     }
   },
-  "include": ["src/main/**/*", "src/preload/**/*", "src/ai/**/*", "src/shared/**/*", "electron.vite.config.ts"]
+  "include": ["src/main/**/*", "src/preload/**/*", "src/ai/**/*", "src/shared/**/*", "src/types/**/*", "electron.vite.config.ts"]
 }

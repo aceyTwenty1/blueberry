@@ -14,6 +14,7 @@ mkdirSync(join(outDir, 'content'), { recursive: true })
 mkdirSync(join(outDir, 'sidebar'), { recursive: true })
 mkdirSync(join(outDir, 'popup'), { recursive: true })
 mkdirSync(join(outDir, 'newtab'), { recursive: true })
+mkdirSync(join(outDir, 'options'), { recursive: true })
 mkdirSync(join(outDir, 'icons'), { recursive: true })
 
 // Copy manifest + html + css
@@ -23,6 +24,8 @@ if (existsSync('src/firefox/extension/sidebar/sidebar.css')) copyFileSync('src/f
 copyFileSync('src/firefox/extension/popup/index.html', join(outDir, 'popup/index.html'))
 if (existsSync('src/firefox/extension/newtab/index.html')) copyFileSync('src/firefox/extension/newtab/index.html', join(outDir, 'newtab/index.html'))
 if (existsSync('src/firefox/extension/newtab/newtab.css')) copyFileSync('src/firefox/extension/newtab/newtab.css', join(outDir, 'newtab/newtab.css'))
+if (existsSync('src/firefox/extension/options/index.html')) copyFileSync('src/firefox/extension/options/index.html', join(outDir, 'options/index.html'))
+if (existsSync('src/firefox/extension/options/options.css')) copyFileSync('src/firefox/extension/options/options.css', join(outDir, 'options/options.css'))
 for (const s of ['16','32','64','128']) {
   const src = `resources/icon-${s}.png`
   const fallback = 'resources/icon.png'
@@ -38,6 +41,7 @@ const entries = [
   { in: 'src/firefox/extension/sidebar/sidebar.ts', out: 'sidebar/sidebar.js' },
   { in: 'src/firefox/extension/popup/popup.ts', out: 'popup/popup.js' },
   { in: 'src/firefox/extension/newtab/newtab.ts', out: 'newtab/newtab.js' },
+  { in: 'src/firefox/extension/options/options.tsx', out: 'options/options.js' },
 ]
 
 for (const e of entries) {

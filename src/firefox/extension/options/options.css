@@ -1,0 +1,7 @@
+* { font-family: Inter, system-ui, sans-serif; box-sizing: border-box; }
+body { margin: 0; background: #09090b; color: #fafafa; }
+.card { background: #18181b; border: 1px solid #27272a; border-radius: 16px; padding: 16px; }
+.input { width: 100%; background: #09090b; border: 1px solid #27272a; border-radius: 10px; padding: 10px 12px; color: #fafafa; outline: none; }
+.input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+.btn { background: linear-gradient(135deg,#6366f1,#8b5cf6); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px 16px; border-radius: 10px; font-weight: 700; cursor: pointer; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }

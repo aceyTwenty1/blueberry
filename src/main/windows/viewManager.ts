@@ -20,6 +20,9 @@ export class ViewManager {
   private activeTabId: TabId | null = null
   private events: ViewEvents | null = null
   private activeSpaceId: string = 'space-personal'
+  private markdownCache = new Map<TabId, { markdown: string; title: string; url: string; at: number }>()
+  private layoutTimer: NodeJS.Timeout | null = null
+  private layoutPending = false
 
   constructor(events: ViewEvents) {
     this.events = events
@@ -27,8 +30,23 @@ export class ViewManager {
 
   attachWindow(win: BrowserWindow): void {
     this.window = win
-    // Re-layout on resize
-    win.on('resize', () => this.layout())
+    // Debounced layout — 60fps, avoids thrash on drag resize (research §6.3)
+    const debounced = () => this.scheduleLayout()
+    win.on('resize', debounced)
+    win.on('enter-html-full-screen', debounced)
+    win.on('leave-html-full-screen', debounced)
+  }
+
+  private scheduleLayout(): void {
+    if (this.layoutTimer) return
+    if (this.layoutPending) return
+    this.layoutPending = true
+    // 16ms ~60fps, coalesces rapid resize events
+    this.layoutTimer = setTimeout(() => {
+      this.layoutTimer = null
+      this.layoutPending = false
+      this.layout()
+    }, 16)
   }
 
   /** Create a new tab + backing WebContentsView */
@@ -155,29 +173,44 @@ export class ViewManager {
     return this.views.get(id)
   }
 
-  /** Extract clean markdown-ish text via executeJavaScript */
+  /** Extract clean markdown-ish text via executeJavaScript — with warm cache (research §6.4) */
   async extractMarkdown(tabId: TabId): Promise<{ url: string; title: string; markdown: string }> {
     const view = this.views.get(tabId)
     const tab = this.tabs.get(tabId)
     if (!view || !tab) throw new Error('Tab not found')
 
-    // Lightweight extraction — Step 3 will replace with full extractor.ts
+    // Serve warm cache if fresh (<30s and same URL)
+    const cached = this.markdownCache.get(tabId)
+    const currentUrl = view.webContents.getURL()
+    if (cached && Date.now() - cached.at < 30_000 && cached.url === currentUrl) {
+      return { url: cached.url, title: cached.title, markdown: cached.markdown }
+    }
+
     const result = await view.webContents.executeJavaScript(`
       (() => {
         const sel = document.querySelector('article') || document.body;
         let text = sel ? sel.innerText : document.documentElement.innerText;
-        // cap to ~8000 chars to stay token-efficient
         if (text.length > 8000) text = text.slice(0, 8000) + "\\n\\n[truncated]";
-        return {
-          title: document.title,
-          url: location.href,
-          text
-        };
+        return { title: document.title, url: location.href, text };
       })()
     `)
 
     const r = result as { title: string; url: string; text: string }
-    return { url: r.url ?? tab.url, title: r.title ?? tab.title, markdown: r.text ?? '' }
+    const out = { url: r.url ?? tab.url, title: r.title ?? tab.title, markdown: r.text ?? '' }
+    this.markdownCache.set(tabId, { ...out, at: Date.now() })
+    return out
+  }
+
+  private warmExtract(tabId: TabId): void {
+    const view = this.views.get(tabId)
+    if (!view) return
+    // Low-priority warm — requestIdleCallback in renderer, setTimeout 0 in main
+    const idle = (global as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback
+    const run = () => {
+      void this.extractMarkdown(tabId).catch(() => {})
+    }
+    if (idle) idle(run, { timeout: 2000 })
+    else setTimeout(run, 150)
   }
 
   /** Layout active WebContentsView to fill below the renderer toolbar (approx 96px header) */
@@ -216,7 +249,6 @@ export class ViewManager {
       tab.url = wc.getURL()
       tab.canGoBack = wc.canGoBack()
       tab.canGoForward = wc.canGoForward()
-      // favicon could be fetched via page-favicon logic later
       this.emitUpdate({
         id,
         title: tab.title,
@@ -226,6 +258,8 @@ export class ViewManager {
         canGoForward: tab.canGoForward
       })
       this.emitChanged()
+      // Warm markdown cache via idle (so sidebar ask is instant)
+      this.warmExtract(id)
     })
 
     wc.on('page-title-updated', (_e, title) => {

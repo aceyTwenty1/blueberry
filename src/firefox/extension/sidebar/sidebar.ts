@@ -6,13 +6,13 @@
 import { createElement, useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 
-type Agent = { id: string; name: string; desc: string; icon: string; grad: string; prompt: string }
+type Agent = { id: string; name: string; desc: string; icon: string; grad: string; prompt: string; task: 'general' | 'summarize' | 'extract' | 'qa' }
 const AGENTS: Agent[] = [
-  { id: 'general', name: 'Blueberry', desc: 'Ask anything', icon: '◐', grad: 'from-indigo-500 to-violet-500', prompt: '' },
-  { id: 'summarize', name: 'Summarizer', desc: '5 bullets', icon: '◐', grad: 'from-indigo-500 to-violet-500', prompt: 'Summarize this page in 5 concise bullet points. Keep key numbers and links.' },
-  { id: 'extract', name: 'Extractor', desc: 'Tables → markdown', icon: '▦', grad: 'from-emerald-500 to-teal-500', prompt: 'Extract all tables as clean markdown with headers.' },
-  { id: 'pricing', name: 'Pricing', desc: 'Find plans', icon: '◈', grad: 'from-amber-500 to-orange-500', prompt: 'Find and summarize pricing plans, tiers, and comparisons.' },
-  { id: 'clean', name: 'Reader', desc: 'Clean view', icon: '✦', grad: 'from-fuchsia-500 to-pink-500', prompt: 'Rewrite as clean reader-mode markdown, strip ads.' },
+  { id: 'general', name: 'Blueberry', desc: 'Ask anything', icon: '◐', grad: 'from-indigo-500 to-violet-500', prompt: '', task: 'general' },
+  { id: 'summarize', name: 'Summarizer', desc: '5 bullets', icon: '◐', grad: 'from-indigo-500 to-violet-500', prompt: 'Summarize the page in 5 concise bullet points. Keep key numbers, names, and links. Use markdown bullets.', task: 'summarize' },
+  { id: 'extract', name: 'Extractor', desc: 'Tables → markdown', icon: '▦', grad: 'from-emerald-500 to-teal-500', prompt: 'Extract all tables on the page as clean markdown tables with headers. If no tables, say so.', task: 'extract' },
+  { id: 'pricing', name: 'Pricing', desc: 'Find plans', icon: '◈', grad: 'from-amber-500 to-orange-500', prompt: 'Find and summarize pricing plans, tiers, features, and comparisons. Use a markdown table if helpful.', task: 'extract' },
+  { id: 'clean', name: 'Reader', desc: 'Clean view', icon: '✦', grad: 'from-fuchsia-500 to-pink-500', prompt: 'Rewrite the page as clean reader-mode markdown. Strip ads/nav, keep headings, lists, and code.', task: 'summarize' },
 ]
 
 function SidebarApp() {
@@ -71,8 +71,8 @@ function SidebarApp() {
         if (mm.type === 'BLUEBERRY_CHUNK' && !mm.payload?.done) gotChunk = true
       }
       browser.runtime.onMessage.addListener(chunkL as never)
-      await browser.runtime.sendMessage({ type: 'BLUEBERRY_CHAT_STREAM', payload: { providerId: prov, messages: [{ role: 'user', content: fullPrompt }], context: ctx } }).catch(async () => {
-        const r = await browser.runtime.sendMessage({ type: 'BLUEBERRY_CHAT', payload: { providerId: prov, messages: [{ role: 'user', content: fullPrompt }], context: ctx } }) as { text?: string } | null
+      await browser.runtime.sendMessage({ type: 'BLUEBERRY_CHAT_STREAM', payload: { providerId: prov, messages: [{ role: 'user', content: fullPrompt }], context: ctx, task: agent.task } }).catch(async () => {
+        const r = await browser.runtime.sendMessage({ type: 'BLUEBERRY_CHAT', payload: { providerId: prov, messages: [{ role: 'user', content: fullPrompt }], context: ctx, task: agent.task } }) as { text?: string } | null
         setMessages(prev => {
           const withoutLast = prev.slice(0, -1)
           return [...withoutLast, { role: 'assistant', content: r?.text ?? 'No response' }]
