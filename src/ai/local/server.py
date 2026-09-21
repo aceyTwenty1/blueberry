@@ -28,9 +28,17 @@ from typing import Any, Dict, List
 HUMAIZE_ROOT = Path(r"D:\Humaize")
 if HUMAIZE_ROOT.exists() and str(HUMAIZE_ROOT) not in sys.path:
     sys.path.insert(0, str(HUMAIZE_ROOT))
+# Sibling imports (hardware.py) work whether run as script or imported as module
+_LOCAL_DIR = str(Path(__file__).resolve().parent)
+if _LOCAL_DIR not in sys.path:
+    sys.path.insert(0, _LOCAL_DIR)
 
 PORT_DEFAULT = 11435
 MODEL_DEFAULT = "HuggingFaceTB/SmolLM2-135M-Instruct"
+
+# Active runtime caps (set in main() from --profile). PunyRewriter/Wrap read these.
+CAPS = None  # type: ignore
+PROFILE_NAME = "puny"
 
 # --- Try to import Humaize's TextRewriter, else define minimal fallback ---
 try:
@@ -50,18 +58,27 @@ except Exception as e:
 class PunyRewriter:
     """Minimal fallback rewriter when Humaize not available — same HF local via transformers."""
 
-    def __init__(self, model_name: str, puny: bool = True):
+    def __init__(self, model_name: str, puny: bool = True, caps=None):
         self.model_name = model_name
         self.puny = puny
+        self.caps = caps
         self._model = None
         self._tok = None
         self.device = "cpu"
+
+    @property
+    def max_tokens_cap(self) -> int:
+        if self.caps is not None:
+            return self.caps.max_new_tokens
+        return 64 if self.puny else 128
 
     def load(self):
         from transformers import AutoModelForCausalLM, AutoTokenizer
         import torch
 
-        print(f"[sidecar] Loading {self.model_name} (puny={self.puny}) ...")
+        threads = self.caps.threads if self.caps is not None else (1 if self.puny else 4)
+        interop = self.caps.interop_threads if self.caps is not None else 1
+        print(f"[sidecar] Loading {self.model_name} (puny={self.puny}, threads={threads}) ...")
         tok = AutoTokenizer.from_pretrained(self.model_name, trust_remote_code=True)
         if tok.pad_token is None:
             tok.pad_token = tok.eos_token
@@ -71,13 +88,14 @@ class PunyRewriter:
         )
         mdl.to(self.device)
         mdl.eval()
-        # Puny: 1 thread like Humaize Yoga
+        # Latency-tuned threads (MKL-DNN): physical cores, capped — see hardware.py
         try:
-            torch.set_num_threads(1)
+            torch.set_num_threads(threads)
+            torch.set_num_interop_threads(interop)
         except:
             pass
         self._model, self._tok = mdl, tok
-        print(f"[sidecar] Ready {self.model_name} on {self.device}")
+        print(f"[sidecar] Ready {self.model_name} on {self.device} ({threads} threads)")
         return self
 
     def chat(self, messages: List[Dict[str, str]], max_new_tokens: int = 64) -> str:
@@ -90,9 +108,9 @@ class PunyRewriter:
         except:
             # fallback plain
             prompt = "\n".join(f"{m['role']}: {m['content']}" for m in messages) + "\nassistant:"
-        if self.puny:
-            max_new_tokens = min(max_new_tokens, 64)
-            prompt = prompt[-2000:]  # Humaize puny cap
+        prompt_cap = self.caps.prompt_cap if self.caps is not None else 2000
+        max_new_tokens = min(max_new_tokens, self.max_tokens_cap)
+        prompt = prompt[-prompt_cap:]
 
         enc = self._tok(prompt, return_tensors="pt", truncation=True, max_length=1024)
         input_ids = enc["input_ids"].to(self._model.device)
@@ -120,34 +138,53 @@ _REWRITER: Any = None
 _START = time.time()
 
 
-def get_rewriter(model: str, puny: bool) -> Any:
+def get_rewriter(model: str, puny: bool, caps=None) -> Any:
     global _REWRITER
     if _REWRITER is not None:
         return _REWRITER
     if HAS_HUMAIZE:
-        # Use Humaize's TextRewriter with puny config
+        # Use Humaize's TextRewriter with profile caps
         cfg = GeneratorConfig()
         cfg.fallback_model_name = model
         cfg.model_name = model
-        cfg.max_input_chars = 1000 if puny else 2000  # even tighter than Humaize light 2000
+        cfg.max_input_chars = caps.max_input_chars if caps is not None else (1000 if puny else 2000)
         # Build AppConfig and apply light/puny
         app = AppConfig()
         app.generator = cfg
         if puny:
             app = apply_light_mode(app)
             # extra puny: 1 thread, 32 tok cap will be enforced in rewrite()
-            app.generator.max_input_chars = 1000
-        # Force fast_mode so it uses fallback model (135M) on CPU
+            app.generator.max_input_chars = min(app.generator.max_input_chars, cfg.max_input_chars)
+        # Force fast_mode so it uses fallback model on CPU
         os.environ["HUMAIZE_FAST"] = "1"
         rw = TextRewriter(config=app.generator, fast_mode=True)
         rw.load()
+        # Clamp torch threads post-load (Humaize may set its own)
+        try:
+            import torch
+
+            threads = caps.threads if caps is not None else 2
+            torch.set_num_threads(threads)
+            if caps is not None:
+                torch.set_num_interop_threads(caps.interop_threads)
+        except:
+            pass
+
         # Wrap to expose chat()
         class Wrap:
-            def __init__(self, r):
+            def __init__(self, r, caps=None, puny=True):
                 self.r = r
+                self.caps = caps
                 self.puny = puny
 
+            @property
+            def max_tokens_cap(self) -> int:
+                if self.caps is not None:
+                    return self.caps.max_new_tokens
+                return 64 if self.puny else 128
+
             def chat(self, messages, max_new_tokens=64):
+                max_new_tokens = min(max_new_tokens, self.max_tokens_cap)
                 # Convert messages to Humaize rewrite payload: last user message is payload, rest as guidance
                 payload = messages[-1]["content"] if messages else ""
                 guidance = None
@@ -156,9 +193,9 @@ def get_rewriter(model: str, puny: bool) -> Any:
                 cands = self.r.rewrite(payload, guidance=guidance, num_candidates=1)
                 return cands[0].text if cands else payload
 
-        _REWRITER = Wrap(rw)
+        _REWRITER = Wrap(rw, caps=caps, puny=puny)
     else:
-        rw = PunyRewriter(model, puny)
+        rw = PunyRewriter(model, puny, caps=caps)
         rw.load()
         _REWRITER = rw
     return _REWRITER
@@ -185,8 +222,10 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             uptime = int(time.time() - _START)
             has_model = _REWRITER is not None
+            threads = getattr(CAPS, "threads", 1) if CAPS else 1
             self.wfile.write(
-                json.dumps({"status": "ok", "model": MODEL_DEFAULT, "has_model": has_model, "uptime": uptime}).encode()
+                json.dumps({"status": "ok", "model": MODEL_DEFAULT, "has_model": has_model, "uptime": uptime,
+                            "profile": PROFILE_NAME, "threads": threads}).encode()
             )
         else:
             self.send_response(404)
@@ -230,15 +269,16 @@ class Handler(BaseHTTPRequestHandler):
         if not messages:
             messages = [{"role": "user", "content": "Hello"}]
 
-        # Puny caps
-        max_tokens = int(data.get("max_tokens", data.get("max_new_tokens", 64)))
-        if _REWRITER and getattr(_REWRITER, "puny", False):
-            max_tokens = min(max_tokens, 64)
+        # Profile caps (max_tokens_cap exposed by Wrap/PunyRewriter)
+        req_tokens = int(data.get("max_tokens", data.get("max_new_tokens", 64)))
+        cap = getattr(_REWRITER, "max_tokens_cap", 64) if _REWRITER else 64
+        max_tokens = min(req_tokens, cap)
 
         # Generate
         try:
-            rewriter = get_rewriter(MODEL_DEFAULT, puny=True)
-            text = rewriter.chat(messages, max_new_tokens=max_tokens)
+            rewriter = get_rewriter(MODEL_DEFAULT, puny=True, caps=CAPS)
+            cap = getattr(rewriter, "max_tokens_cap", max_tokens)
+            text = rewriter.chat(messages, max_new_tokens=min(max_tokens, cap))
         except Exception as e:
             import traceback
 
@@ -268,20 +308,56 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    global MODEL_DEFAULT
-    parser = argparse.ArgumentParser(description="Blueberry 135M puny sidecar (Humaize-style)")
-    parser.add_argument("--model", default=MODEL_DEFAULT, help="HF model id")
+    global MODEL_DEFAULT, CAPS, PROFILE_NAME
+    # Windows consoles/redirects default to cp1252: never let a print kill the server
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+    from hardware import PROFILES, apply_thread_env, describe, resolve_profile
+
+    parser = argparse.ArgumentParser(description="Blueberry local HF sidecar (Humaize-style, hardware-tuned)")
+    parser.add_argument("--model", default=None, help="HF model id (default: profile pick, e.g. SmolLM2-360M on yoga)")
     parser.add_argument("--port", type=int, default=PORT_DEFAULT, help="port")
-    parser.add_argument("--puny", action="store_true", default=True, help="puny caps (1000 chars, 64 tok, 1 thread)")
+    parser.add_argument("--puny", action="store_true", default=False,
+                        help="force puny budgets (legacy flag; overrides --profile caps, keeps model)")
+    parser.add_argument("--profile", default="auto", choices=["auto", "puny", "yoga", "beefy"],
+                        help="hardware profile (default auto-detect; this Yoga 9 resolves to 'yoga')")
+    parser.add_argument("--threads", type=int, default=None, help="override torch threads (default: profile pick)")
+    parser.add_argument("--print-profile", action="store_true", help="print resolved hardware profile as JSON and exit")
     parser.add_argument("--host", default="127.0.0.1")
     args = parser.parse_args()
-    MODEL_DEFAULT = args.model
 
-    print(f"[sidecar] Blueberry 135M puny sidecar")
-    print(f"[sidecar] Model: {args.model}  Puny: {args.puny}  Port: {args.port}")
-    print(f"[sidecar] Pre-loading model (first run downloads ~280MB)...")
+    if args.print_profile:
+        import json as _json
+
+        print(_json.dumps(describe(), indent=2))
+        return
+
+    caps = resolve_profile(args.profile)
+    if args.puny:
+        # Legacy flag: puny budgets on any profile (model untouched unless --model given)
+        from hardware import PROFILES as _P
+
+        caps = _P["puny"]
+    if args.threads:
+        from dataclasses import replace as _replace
+
+        caps = _replace(caps, threads=max(1, args.threads))
+    CAPS = caps
+    PROFILE_NAME = caps.name
+    # Thread env MUST precede torch import (torch reads OMP/MKL at init; load() is lazy so we're safe)
+    apply_thread_env(caps)
+
+    MODEL_DEFAULT = args.model or caps.model
+
+    print(f"[sidecar] Blueberry local sidecar (profile={caps.name}: {caps.why})")
+    print(f"[sidecar] Model: {MODEL_DEFAULT}  Threads: {caps.threads}  Port: {args.port}")
+    print(f"[sidecar] Budgets: input<={caps.max_input_chars} chars, gen<={caps.max_new_tokens} tok, prompt<={caps.prompt_cap}")
+    print(f"[sidecar] Pre-loading model (first run downloads, then offline)...")
     try:
-        get_rewriter(args.model, args.puny)
+        get_rewriter(MODEL_DEFAULT, True, caps=caps)
         print(f"[sidecar] Model ready")
     except Exception as e:
         print(f"[sidecar] Preload failed, will lazy-load on first request: {e}")

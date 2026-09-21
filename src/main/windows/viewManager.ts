@@ -201,6 +201,11 @@ export class ViewManager {
 
     const r = result as { title: string; url: string; text: string }
     const out = { url: r.url ?? tab.url, title: r.title ?? tab.title, markdown: r.text ?? '' }
+    // Bound the cache: ~20 pages × 8KB ≈ 160KB max (matters on 16GB shared-iGPU ultrabooks)
+    if (this.markdownCache.size >= 20) {
+      const oldest = this.markdownCache.keys().next()
+      if (!oldest.done) this.markdownCache.delete(oldest.value)
+    }
     this.markdownCache.set(tabId, { ...out, at: Date.now() })
     return out
   }

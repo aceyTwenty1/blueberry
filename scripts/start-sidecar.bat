@@ -1,12 +1,12 @@
 @echo off
-REM Blueberry 135M puny sidecar — double-click to start, like Humaize chat.bat
-REM Fully local HF (HuggingFaceTB/SmolLM2-135M-Instruct), no Ollama, ~280MB download once then offline
+REM Blueberry local sidecar — double-click to start, like Humaize chat.bat
+REM Hardware-aware profile (auto: yoga on Yoga 9 = 360M, else 135M), no Ollama, download once then offline
 
 set "BLUEBERRY=D:\Blueberry"
 cd /d "%BLUEBERRY%"
 
-echo [Blueberry] Starting 135M puny sidecar on http://127.0.0.1:11435
-echo [Blueberry] First run downloads ~280MB then offline
+echo [Blueberry] Starting local sidecar on http://127.0.0.1:11435 (profile auto)
+echo [Blueberry] First run downloads the model once, then offline
 
 where python >nul 2>&1
 if %errorlevel% neq 0 (
@@ -22,5 +22,5 @@ if not exist ".venv\Scripts\python.exe" (
   .venv\Scripts\python -m pip install -r src\ai\local\requirements.txt
 )
 
-.venv\Scripts\python src\ai\local\server.py --model HuggingFaceTB/SmolLM2-135M-Instruct --port 11435 --puny --host 127.0.0.1
+.venv\Scripts\python src\ai\local\server.py --profile auto --port 11435 --host 127.0.0.1
 pause

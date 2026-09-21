@@ -1,6 +1,8 @@
-# Blueberry 135M puny sidecar — Humaize-style, local HF, no Ollama needed
+# Blueberry local sidecar — Humaize-style, local HF, no Ollama needed
+# Hardware-aware: --profile auto resolves 'yoga' on Yoga 9 14ITL5 (360M, 4 threads)
 # Usage: powershell -ExecutionPolicy Bypass -File scripts/start-sidecar.ps1
-# Or:    python src/ai/local/server.py --model HuggingFaceTB/SmolLM2-135M-Instruct --port 11435 --puny
+# Or:    python src/ai/local/server.py --profile auto --port 11435
+# Puny fallback: python src/ai/local/server.py --profile puny --model HuggingFaceTB/SmolLM2-135M-Instruct
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
@@ -8,8 +10,8 @@ $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $blueberry = "D:\Blueberry"
 Set-Location -LiteralPath $blueberry
 
-Write-Host "[Blueberry] Starting 135M puny sidecar (Humaize-style) on http://127.0.0.1:11435" -ForegroundColor Cyan
-Write-Host "[Blueberry] First run downloads ~280MB (HuggingFaceTB/SmolLM2-135M-Instruct) then offline" -ForegroundColor Yellow
+Write-Host "[Blueberry] Starting local sidecar (hardware profile: auto) on http://127.0.0.1:11435" -ForegroundColor Cyan
+Write-Host "[Blueberry] First run downloads the model once (135M ~280MB / 360M ~700MB), then offline" -ForegroundColor Yellow
 
 # Check python
 $py = Get-Command python -ErrorAction SilentlyContinue
@@ -36,5 +38,5 @@ try {
   exit 0
 } catch {}
 
-Write-Host "[Blueberry] Launching server.py ..." -ForegroundColor Cyan
-& $pyExe src/ai/local/server.py --model HuggingFaceTB/SmolLM2-135M-Instruct --port 11435 --puny --host 127.0.0.1
+Write-Host "[Blueberry] Launching server.py (profile auto — yoga on Yoga 9) ..." -ForegroundColor Cyan
+& $pyExe src/ai/local/server.py --profile auto --port 11435 --host 127.0.0.1

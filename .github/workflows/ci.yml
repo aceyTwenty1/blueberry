@@ -37,7 +37,13 @@ jobs:
         run: npm run build:dual
 
       - name: Python sidecar syntax check
-        run: python -m py_compile src/ai/local/server.py
+        run: python -m py_compile src/ai/local/server.py src/ai/local/hardware.py
+
+      - name: Python hardware profile tests
+        run: python -m unittest discover -s src/ai/local -p "test_*.py"
+
+      - name: Hardware profile resolution smoke test
+        run: python src/ai/local/server.py --print-profile
 
       - name: Upload XPI artifact
         uses: actions/upload-artifact@v4
