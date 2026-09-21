@@ -35,7 +35,7 @@ if not exist "%ROOT%dist\firefox-extension\manifest.json" (
 
 REM 2. Ensure real browser exists
 if not exist "%BROWSER_EXE%" (
-  echo [Blueberry] Real browser missing, building (20s)...
+  echo [Blueberry] Real browser missing, building (20s^)...
   pushd "%ROOT%"
   powershell -ExecutionPolicy Bypass -File "%ROOT%scripts\build-real-browser.ps1"
   if errorlevel 1 (
@@ -52,7 +52,7 @@ if %errorlevel% equ 0 (
   echo [Blueberry] Sidecar already running on :11435
 ) else (
   if exist "%SIDECAR%" (
-    echo [Blueberry] Starting local sidecar (profile auto - yoga on Yoga 9), window stays open...
+    echo [Blueberry] Starting local sidecar (profile auto - yoga on Yoga 9^), window stays open...
     if exist "%VENV%" (
       start "Blueberry Sidecar" "%VENV%" "%SIDECAR%" --profile auto --port 11435 --host 127.0.0.1
     ) else (

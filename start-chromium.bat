@@ -16,7 +16,7 @@ echo [Blueberry Chromium] ROOT=%ROOT%
 
 REM 1. Ensure deps built
 if not exist "%ROOT%out\main\index.js" (
-  echo [Blueberry Chromium] Building Electron (first run ~15s)...
+  echo [Blueberry Chromium] Building Electron (first run ~15s^)...
   pushd "%ROOT%"
   where npm >nul 2>&1
   if errorlevel 1 (
@@ -67,7 +67,7 @@ if errorlevel 1 (
 )
 REM Use dev for HMR, or built out/main if you prefer prod
 if exist "%ROOT%out\main\index.js" (
-  echo [Blueberry Chromium] Running built Electron (out/main)...
+  echo [Blueberry Chromium] Running built Electron (out/main^)...
   start "" npm run dev:electron
 ) else (
   npm run dev:electron
