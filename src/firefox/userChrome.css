@@ -4,17 +4,36 @@
    Firefox ≥ 109 with sidebar.verticalTabs support
 */
 
-/* ── Variables ── */
+/* ── Variables — Blueberry Design Language ("Grove at Dusk")
+ * Mirrors src/firefox/theme/tokens.css (source of truth). userChrome
+ * cannot @import extension files, so keep these in sync by hand. */
 :root {
-  --blueberry-bg: #09090b;
-  --blueberry-surface: #18181b;
-  --blueberry-surface-2: #1f1f23;
-  --blueberry-border: #27272a;
-  --blueberry-border-strong: #3f3f46;
-  --blueberry-accent: #6366f1;
-  --blueberry-accent-2: #8b5cf6;
-  --blueberry-radius: 12px;
-  --blueberry-radius-pill: 999px;
+  --bb-bg: #0c0c16;
+  --bb-bg-deep: #090912;
+  --bb-surface: #16161f;
+  --bb-surface-2: #1c1c28;
+  --bb-border: #262633;
+  --bb-border-strong: #3a3a4d;
+  --bb-text: #f4f2ff;
+  --bb-text-dim: #b9b4d6;
+  --bb-text-faint: #6f6a8c;
+  --bb-accent: #6366f1;
+  --bb-accent-2: #8b5cf6;
+  --bb-accent-3: #ec4899;
+  --bb-orb: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+  --bb-radius: 12px;
+  --bb-radius-pill: 999px;
+
+  /* Legacy aliases (do not use in new code) */
+  --blueberry-bg: var(--bb-bg);
+  --blueberry-surface: var(--bb-surface);
+  --blueberry-surface-2: var(--bb-surface-2);
+  --blueberry-border: var(--bb-border);
+  --blueberry-border-strong: var(--bb-border-strong);
+  --blueberry-accent: var(--bb-accent);
+  --blueberry-accent-2: var(--bb-accent-2);
+  --blueberry-radius: var(--bb-radius);
+  --blueberry-radius-pill: var(--bb-radius-pill);
 }
 
 /* ── Window & Toolbox ── */

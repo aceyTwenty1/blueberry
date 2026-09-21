@@ -1,0 +1,62 @@
+/* ─────────────────────────────────────────────────────────────
+ * Blueberry Design Language — "Grove at Dusk"
+ * Source of truth for every Blueberry surface (sidebar, newtab,
+ * popup, options, palette). userChrome.css mirrors these values
+ * (it cannot @import extension files, so keep them in sync).
+ *
+ * Deliberately NOT Zen: Zen is neutral grey + user accent + compact
+ * density. Blueberry is indigo-tinted ink, a signature orb gradient,
+ * pill geometry, glass headers, and generous radii. If it looks like
+ * Zen with purple, we've failed — the tint, orb, and pills are the brand.
+ * ───────────────────────────────────────────────────────────── */
+:root {
+  /* Ink — indigo-tinted, never pure grey */
+  --bb-bg: #0c0c16;
+  --bb-bg-deep: #090912;
+  --bb-surface: #16161f;
+  --bb-surface-2: #1c1c28;
+  --bb-border: #262633;
+  --bb-border-strong: #3a3a4d;
+
+  /* Text */
+  --bb-text: #f4f2ff;
+  --bb-text-dim: #b9b4d6;
+  --bb-text-faint: #6f6a8c;
+  --bb-text-ghost: #4a4663;
+
+  /* Signature orb gradient (indigo → violet → berry) */
+  --bb-accent: #6366f1;
+  --bb-accent-2: #8b5cf6;
+  --bb-accent-3: #ec4899;
+  --bb-orb: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+  --bb-orb-soft: rgba(99, 102, 241, 0.14);
+  --bb-orb-ring: rgba(99, 102, 241, 0.28);
+
+  /* Workspace grove colors */
+  --bb-grove-1: #6366f1;
+  --bb-grove-2: #0ea5e9;
+  --bb-grove-3: #10b981;
+  --bb-grove-4: #f59e0b;
+  --bb-grove-5: #ec4899;
+
+  /* Live / status */
+  --bb-live: #34d399;
+
+  /* Geometry — pills first, cards second */
+  --bb-radius-pill: 999px;
+  --bb-radius-card: 16px;
+  --bb-radius-tile: 12px;
+  --bb-radius-orb: 10px;
+
+  /* Elevation */
+  --bb-shadow-orb: 0 4px 12px rgba(99, 102, 241, 0.35);
+  --bb-shadow-card: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --bb-ring-focus: 0 0 0 3px rgba(99, 102, 241, 0.22);
+
+  /* Motion */
+  --bb-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --bb-speed: 0.18s;
+
+  /* Type */
+  --bb-font: 'Inter', system-ui, -apple-system, sans-serif;
+}

@@ -15,6 +15,7 @@ mkdirSync(join(outDir, 'sidebar'), { recursive: true })
 mkdirSync(join(outDir, 'popup'), { recursive: true })
 mkdirSync(join(outDir, 'newtab'), { recursive: true })
 mkdirSync(join(outDir, 'options'), { recursive: true })
+mkdirSync(join(outDir, 'theme'), { recursive: true })
 mkdirSync(join(outDir, 'icons'), { recursive: true })
 
 // Copy manifest + html + css
@@ -26,6 +27,7 @@ if (existsSync('src/firefox/extension/newtab/index.html')) copyFileSync('src/fir
 if (existsSync('src/firefox/extension/newtab/newtab.css')) copyFileSync('src/firefox/extension/newtab/newtab.css', join(outDir, 'newtab/newtab.css'))
 if (existsSync('src/firefox/extension/options/index.html')) copyFileSync('src/firefox/extension/options/index.html', join(outDir, 'options/index.html'))
 if (existsSync('src/firefox/extension/options/options.css')) copyFileSync('src/firefox/extension/options/options.css', join(outDir, 'options/options.css'))
+if (existsSync('src/firefox/theme/tokens.css')) copyFileSync('src/firefox/theme/tokens.css', join(outDir, 'theme/tokens.css'))
 for (const s of ['16','32','64','128']) {
   const src = `resources/icon-${s}.png`
   const fallback = 'resources/icon.png'

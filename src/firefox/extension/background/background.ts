@@ -13,6 +13,16 @@ import { encryptProviders, decryptProviders } from './crypto'
 import { runAgentGecko } from './agent'
 import type { AgentRunRequest } from '../../../shared/types/agent'
 import type { ComposioConfig } from '../../../shared/types/composio'
+import {
+  applyWorkspace,
+  assignTab,
+  createWorkspace,
+  getActiveWorkspaceId,
+  getTabMap,
+  getTabWorkspace,
+  getWorkspaces,
+  unassignTab
+} from './workspaces'
 
 // Gecko WebExtension globals — types provided by @types/firefox-webext-browser (tsconfig.firefox.json)
 // `browser` is global in MV2 background; no custom shim needed.
@@ -177,6 +187,42 @@ browser.runtime.onMessage.addListener(async (msg: unknown, sender: unknown) => {
       })()
       return { ok: true, streaming: true }
     }
+    case 'BLUEBERRY_GET_WORKSPACES': {
+      const [spaces, activeId, tabMap] = await Promise.all([getWorkspaces(), getActiveWorkspaceId(), getTabMap()])
+      const tabs = await browser.tabs.query({ currentWindow: true })
+      const openIds = new Set(tabs.filter((t) => t.id !== undefined).map((t) => String(t.id)))
+      const withTabs = spaces.map((s) => {
+        // Only open tabs; unmapped open tabs belong to the active workspace
+        const ids = Object.entries(tabMap)
+          .filter(([tabId, ws]) => ws === s.id && openIds.has(tabId))
+          .map(([tabId]) => tabId)
+        if (s.id === activeId) {
+          for (const t of tabs) {
+            const key = String(t.id)
+            if (t.id !== undefined && !(key in tabMap) && !ids.includes(key)) ids.push(key)
+          }
+        }
+        return { ...s, tabIds: ids }
+      })
+      return { spaces: withTabs, activeId }
+    }
+    case 'BLUEBERRY_SET_WORKSPACE': {
+      const { id } = m.payload as { id: string }
+      const res = await applyWorkspace(id)
+      await browser.runtime.sendMessage({ type: 'BLUEBERRY_WORKSPACES_CHANGED', payload: { activeId: id } }).catch(() => {})
+      return res
+    }
+    case 'BLUEBERRY_CREATE_WORKSPACE': {
+      const { name } = m.payload as { name: string }
+      const ws = await createWorkspace(name)
+      await browser.runtime.sendMessage({ type: 'BLUEBERRY_WORKSPACES_CHANGED', payload: { activeId: ws.id } }).catch(() => {})
+      return ws
+    }
+    case 'BLUEBERRY_ASSIGN_TAB': {
+      const { tabId, workspaceId } = m.payload as { tabId: number; workspaceId: string }
+      await assignTab(tabId, workspaceId)
+      return { ok: true }
+    }
     case 'BLUEBERRY_TABS_LIST': {
       const tabs = await browser.tabs.query({})
       return tabs.map(
@@ -247,6 +293,27 @@ browser.tabs.onUpdated.addListener((_id, _info, tab) => {
 })
 browser.tabs.onActivated.addListener((info) => {
   browser.runtime.sendMessage({ type: 'BLUEBERRY_TAB_ACTIVATED', payload: { tabId: info.tabId } }).catch(() => {})
+})
+
+// Workspace tab bookkeeping: new tabs join the active workspace, closed tabs are forgotten
+browser.tabs.onCreated.addListener(async (tab) => {
+  if (tab.id === undefined) return
+  try {
+    const activeId = await getActiveWorkspaceId()
+    if (!(await getTabWorkspace(tab.id, ''))) await assignTab(tab.id, activeId)
+    await browser.runtime.sendMessage({ type: 'BLUEBERRY_WORKSPACES_CHANGED', payload: { activeId } }).catch(() => {})
+  } catch {
+    // non-fatal
+  }
+})
+browser.tabs.onRemoved.addListener(async (tabId) => {
+  try {
+    await unassignTab(tabId)
+    const activeId = await getActiveWorkspaceId()
+    await browser.runtime.sendMessage({ type: 'BLUEBERRY_WORKSPACES_CHANGED', payload: { activeId } }).catch(() => {})
+  } catch {
+    // non-fatal
+  }
 })
 
 console.log('[Blueberry] Gecko background ready — providers:', DEFAULT_SPACES.map((s) => s.name).join(', '))
