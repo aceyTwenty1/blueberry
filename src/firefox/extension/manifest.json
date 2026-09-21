@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Blueberry — AI Native Browser",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AI-native browser layer for Firefox — sidebar co-pilot, command palette, vertical tabs, page context",
   "author": "Blueberry Contributors",
   "homepage_url": "https://github.com/blueberry-browser/blueberry",

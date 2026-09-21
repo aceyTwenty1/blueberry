@@ -1,6 +1,6 @@
 {
   "name": "blueberry",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Blueberry — AI-native dual-browser (Gecko Firefox + Chromium Electron) with 135M puny local HF + premium UI",
   "private": true,
   "type": "module",

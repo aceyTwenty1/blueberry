@@ -1,12 +1,26 @@
 # Blueberry Real Browser - Repack Firefox Gecko as Blueberry (no source build)
 # Produces dist/Blueberry-Browser/ - a real, double-clickable browser with Blueberry system addon + userChrome + policies
 # Mirrors Floorp/Waterfox distribution model: official Firefox binary + distribution/ overlay
-# Usage: powershell -ExecutionPolicy Bypass -File scripts/build-real-browser.ps1
+# Base MUST be ESR/Developer (Release refuses unsigned add-ons). Default: .esr-base\core (Firefox ESR, local).
+# Usage: powershell -ExecutionPolicy Bypass -File scripts/build-real-browser.ps1 [-FirefoxSrc "C:\path\to\firefox"]
 # Output: dist/Blueberry-Browser/Blueberry.exe (launcher) + firefox base + Blueberry
+
+param([string]$FirefoxSrc = "")
 
 $ErrorActionPreference = "Stop"
 $blueberryRoot = "D:\Blueberry"
-$firefoxSrc = "C:\Program Files\Mozilla Firefox"
+if ([string]::IsNullOrWhiteSpace($FirefoxSrc)) {
+  $esrBase = Join-Path $blueberryRoot ".esr-base\core"
+  if (Test-Path (Join-Path $esrBase "firefox.exe")) {
+    $firefoxSrc = $esrBase
+    Write-Host "[Blueberry] Using local Firefox ESR base (unsigned add-ons allowed)" -ForegroundColor Gray
+  } else {
+    $firefoxSrc = "C:\Program Files\Mozilla Firefox"
+    Write-Host "[Blueberry] WARNING: no .esr-base found, using stock Firefox (unsigned add-ons will NOT install)" -ForegroundColor Yellow
+  }
+} else {
+  $firefoxSrc = $FirefoxSrc
+}
 $outRoot = Join-Path $blueberryRoot "dist\Blueberry-Browser"
 $distSrc = Join-Path $blueberryRoot "dist\firefox-extension"
 
