@@ -52,15 +52,15 @@ if %errorlevel% equ 0 (
   echo [Blueberry] Sidecar already running on :11435
 ) else (
   if exist "%SIDECAR%" (
-    echo [Blueberry] Starting 135M sidecar - first run downloads 280MB, window stays open...
+    echo [Blueberry] Starting local sidecar (profile auto - yoga on Yoga 9), window stays open...
     if exist "%VENV%" (
-      start "Blueberry Sidecar" "%VENV%" "%SIDECAR%" --model HuggingFaceTB/SmolLM2-135M-Instruct --port 11435 --puny --host 127.0.0.1
+      start "Blueberry Sidecar" "%VENV%" "%SIDECAR%" --profile auto --port 11435 --host 127.0.0.1
     ) else (
       where python >nul 2>&1
       if errorlevel 1 (
         echo [WARN] python not found, skipping sidecar. Browser will run without local AI.
       ) else (
-        start "Blueberry Sidecar" python "%SIDECAR%" --model HuggingFaceTB/SmolLM2-135M-Instruct --port 11435 --puny --host 127.0.0.1
+        start "Blueberry Sidecar" python "%SIDECAR%" --profile auto --port 11435 --host 127.0.0.1
       )
     )
     timeout /t 3 /nobreak >nul

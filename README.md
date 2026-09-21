@@ -80,6 +80,7 @@ powershell -ExecutionPolicy Bypass -File scripts/start-dual.ps1
 ```
 
 **One-click startup (with sidecar):**
+- **Easiest:** `powershell -ExecutionPolicy Bypass -File scripts/install-shortcuts.ps1` → double-click **Blueberry** on the Desktop (or Start Menu → Blueberry). Launches sidecar + Gecko browser. Remove: `-Remove`.
 - `start-blueberry.bat` — Gecko real browser + sidecar (visible log to `blueberry-startup.log`)
 - `start-chromium.bat` — Electron + sidecar
 - Autostart on login: `powershell -ExecutionPolicy Bypass -File scripts/install-startup.ps1` → `shell:startup\Blueberry.lnk` + Task Scheduler. Remove: `-Remove`.
