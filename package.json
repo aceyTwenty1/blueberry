@@ -58,6 +58,7 @@
     "@types/react-dom": "^19.0.4",
     "@types/turndown": "^5.0.6",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^3.2.7",
     "autoprefixer": "^10.4.21",
     "electron": "^34.3.3",
     "electron-builder": "^25.1.8",

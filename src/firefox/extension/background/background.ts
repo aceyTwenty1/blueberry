@@ -43,7 +43,8 @@ async function getProviders(): Promise<AIProviderConfig[]> {
 }
 
 async function saveProvider(config: AIProviderConfig): Promise<void> {
-  const providers = await getProviders()
+  // Copy: getProviders() may return the shared DEFAULT_AI_PROVIDERS array (never mutate it)
+  const providers = [...(await getProviders())]
   const idx = providers.findIndex((p) => p.id === config.id)
   if (idx >= 0) providers[idx] = config
   else providers.push(config)

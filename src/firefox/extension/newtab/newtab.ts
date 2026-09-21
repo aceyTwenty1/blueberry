@@ -77,9 +77,9 @@ function init() {
     if (!q) return
     // If looks like question, ask AI sidebar; else search
     if (q.toLowerCase().startsWith('summarize') || q.includes('?')) {
-      // @ts-ignore browser global
+
       browser.runtime.sendMessage({ type: 'BLUEBERRY_QUICK_ACTION', payload: { action: 'custom', query: q } })
-      // @ts-ignore
+
       browser.sidebarAction.open().catch(() => {})
     } else if (q.includes('.') && !q.includes(' ')) {
       location.href = q.startsWith('http') ? q : `https://${q}`
@@ -90,9 +90,9 @@ function init() {
   document.querySelectorAll('[data-qa]').forEach(btn => {
     btn.addEventListener('click', () => {
       const qa = (btn as HTMLElement).getAttribute('data-qa')!
-      // @ts-ignore
+
       browser.runtime.sendMessage({ type: 'BLUEBERRY_QUICK_ACTION', payload: { action: qa.toLowerCase().replace(' ', '-') } })
-      // @ts-ignore
+
       browser.sidebarAction.open().catch(() => {})
     })
   })

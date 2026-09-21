@@ -66,4 +66,41 @@ describe('aiRouter (Gecko)', () => {
     for await (const c of chatStreamGecko({ ...baseReq, stream: true } as never, cfg)) chunks.push(c)
     expect(chunks.join('')).toBe('hello world')
   })
+
+  it('streams OpenAI SSE deltas until [DONE]', async () => {
+    const sse =
+      `data: ${JSON.stringify({ choices: [{ delta: { content: 'Hel' } }] })}\n\n` +
+      `data: ${JSON.stringify({ choices: [{ delta: { content: 'lo' } }] })}\n\n` +
+      `data: [DONE]\n\n`
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode(sse))
+        controller.close()
+      }
+    })
+    fetchMock.mockResolvedValueOnce({ ok: true, body: stream } as unknown as Response)
+    const cfg: AIProviderConfig = { id: 'openai', label: 'OpenAI', enabled: true, apiKey: 'sk-test', model: 'gpt-4o-mini' }
+    const chunks: string[] = []
+    for await (const c of chatStreamGecko({ ...baseReq, stream: true } as never, cfg)) chunks.push(c)
+    expect(chunks.join('')).toBe('Hello')
+  })
+
+  it('falls back to non-stream when SSE body is missing', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: true, body: null } as unknown as Response)
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ choices: [{ message: { content: 'fallback' } }] }) } as Response)
+    const cfg: AIProviderConfig = { id: 'openai', label: 'OpenAI', enabled: true, apiKey: 'sk-test', model: 'gpt-4o-mini' }
+    const chunks: string[] = []
+    for await (const c of chatStreamGecko({ ...baseReq, stream: true } as never, cfg)) chunks.push(c)
+    expect(chunks.join('')).toBe('fallback')
+  })
+
+  it('throws on local stream HTTP error', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 500, body: null } as unknown as Response)
+    const cfg: AIProviderConfig = { id: 'ollama', label: 'Ollama', enabled: true, baseUrl: 'http://localhost:11434', model: 'llama3.1' }
+    await expect(async () => {
+      for await (const _c of chatStreamGecko({ ...baseReq, stream: true } as never, cfg)) {
+        // drain
+      }
+    }).rejects.toThrow('Ollama stream 500')
+  })
 })

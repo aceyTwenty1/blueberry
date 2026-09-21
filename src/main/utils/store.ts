@@ -94,7 +94,9 @@ function load(): PersistedState {
       }
       cache = raw
       return cache!
-    } catch {}
+    } catch (e) {
+      console.warn(`[store] corrupt store at ${p}, falling back to defaults:`, String(e).slice(0, 160))
+    }
   }
   cache = { providers: DEFAULT_AI_PROVIDERS }
   return cache
@@ -133,10 +135,12 @@ export const store = {
   },
   setProvider(config: AIProviderConfig): void {
     const s = load()
-    const idx = s.providers.findIndex((p) => p.id === config.id)
-    if (idx >= 0) s.providers[idx] = config
-    else s.providers.push(config)
-    save(s)
+    // Copy: s.providers may BE the shared DEFAULT_AI_PROVIDERS array on first run (never mutate it)
+    const providers = [...s.providers]
+    const idx = providers.findIndex((p) => p.id === config.id)
+    if (idx >= 0) providers[idx] = config
+    else providers.push(config)
+    save({ ...s, providers })
   },
   getProvider(id: string): AIProviderConfig | null {
     return load().providers.find((p) => p.id === id) ?? null

@@ -95,10 +95,14 @@ export class ViewManager {
       if (this.window && this.activeTabId === id) {
         this.window.contentView.removeChildView(view)
       }
-      // destroy webContents
+      // destroy webContents (best-effort: view is already detached above)
       const wc: unknown = view.webContents
       if (wc && typeof (wc as { destroy?: () => void }).destroy === 'function') {
-        try { (wc as { destroy: () => void }).destroy() } catch {}
+        try {
+          ;(wc as { destroy: () => void }).destroy()
+        } catch (e) {
+          console.warn(`[viewManager] webContents.destroy failed for tab ${id}:`, String(e).slice(0, 160))
+        }
       }
       this.views.delete(id)
     }

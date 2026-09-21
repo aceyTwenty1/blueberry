@@ -1,7 +1,9 @@
 /**
- * Vector Store — LanceDB scaffold (Step 1).
- * Step 4/5 wires @lancedb/lancedb for history/bookmark indexing and RAG.
+ * Vector Store — scored keyword retrieval backed by AgentMemory.
+ * (Named lancedb for the Step 4/5 migration path: swap this class for a
+ * real LanceDB + embeddings backend without touching callers.)
  */
+import { AgentMemory } from '../agent/memory'
 
 export interface VectorDoc {
   id: string
@@ -13,24 +15,23 @@ export interface VectorDoc {
 }
 
 export class VectorStore {
-  private docs: VectorDoc[] = []
+  private mem = new AgentMemory()
 
   async add(doc: Omit<VectorDoc, 'createdAt'>): Promise<void> {
-    this.docs.push({ ...doc, createdAt: Date.now() })
+    await this.mem.add(doc)
   }
 
   async search(query: string, k = 5): Promise<VectorDoc[]> {
-    // naive substring search until real embeddings land
-    const q = query.toLowerCase()
-    return this.docs.filter((d) => d.text.toLowerCase().includes(q) || d.title.toLowerCase().includes(q)).slice(0, k)
+    const hits = await this.mem.recall(query, k)
+    return hits.map((h) => h.doc)
   }
 
   async list(): Promise<VectorDoc[]> {
-    return [...this.docs]
+    return this.mem.list()
   }
 
   async clear(): Promise<void> {
-    this.docs = []
+    await this.mem.clear()
   }
 }
 
