@@ -9,6 +9,8 @@ import { join } from 'path'
 import { createHash, createCipheriv, createDecipheriv, randomBytes } from 'crypto'
 import type { AIProviderConfig } from '@shared/types/ai'
 import { DEFAULT_AI_PROVIDERS } from '@shared/constants/defaults'
+import type { ComposioConfig } from '@shared/types/composio'
+import { DEFAULT_COMPOSIO_CONFIG } from '@shared/types/composio'
 
 const SALT = 'blueberry-v1-'
 
@@ -67,6 +69,7 @@ function decryptProviders(providers: AIProviderConfig[]): AIProviderConfig[] {
 
 interface PersistedState {
   providers: AIProviderConfig[]
+  composio?: { enabled: boolean; baseUrl: string; consumerKey?: string }
 }
 
 function getStorePath(): string {
@@ -85,7 +88,10 @@ function load(): PersistedState {
   if (existsSync(p)) {
     try {
       const raw = JSON.parse(readFileSync(p, 'utf-8')) as PersistedState
-      raw.providers = decryptProviders(raw.providers)
+      raw.providers = decryptProviders(raw.providers ?? [])
+      if (raw.composio?.consumerKey) {
+        raw.composio = { ...raw.composio, consumerKey: decryptValue(raw.composio.consumerKey) || undefined }
+      }
       cache = raw
       return cache!
     } catch {}
@@ -96,7 +102,21 @@ function load(): PersistedState {
 
 function save(state: PersistedState): void {
   // encrypt before writing, but keep cache decrypted
-  const toPersist: PersistedState = { providers: encryptProviders(state.providers) }
+  const toPersist: PersistedState = {
+    providers: encryptProviders(state.providers),
+    composio: state.composio
+      ? {
+          enabled: state.composio.enabled,
+          baseUrl: state.composio.baseUrl,
+          consumerKey:
+            state.composio.consumerKey && state.composio.consumerKey.includes(':') && state.composio.consumerKey.length > 40
+              ? state.composio.consumerKey // already encrypted
+              : state.composio.consumerKey
+                ? encryptValue(state.composio.consumerKey)
+                : undefined
+        }
+      : undefined
+  }
   cache = state
   const p = getStorePath()
   try {
@@ -120,5 +140,15 @@ export const store = {
   },
   getProvider(id: string): AIProviderConfig | null {
     return load().providers.find((p) => p.id === id) ?? null
+  },
+  getComposio(): ComposioConfig {
+    const c = load().composio
+    if (!c) return DEFAULT_COMPOSIO_CONFIG
+    return { enabled: c.enabled ?? false, baseUrl: c.baseUrl || DEFAULT_COMPOSIO_CONFIG.baseUrl, consumerKey: c.consumerKey }
+  },
+  setComposio(config: ComposioConfig): void {
+    const s = load()
+    s.composio = { enabled: config.enabled, baseUrl: config.baseUrl, consumerKey: config.consumerKey }
+    save(s)
   }
 }

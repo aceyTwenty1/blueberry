@@ -7,6 +7,9 @@ export type ToolName =
   | 'openTab'
   | 'summarizePage'
   | 'extractTables'
+  | 'composioSearch'
+  | 'composioExecute'
+  | 'composioConnect'
 
 export interface ToolCall {
   tool: ToolName

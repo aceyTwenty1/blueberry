@@ -5,12 +5,49 @@
  */
 import { runAgent } from '../../../ai/agent/executor'
 import { agentMemory } from '../../../ai/agent/memory'
+import { composioManageConnections, composioMultiExecute, composioSearchTools } from '../../../ai/agent/composio'
 import { chatGecko } from './aiRouter'
+import { decrypt } from './crypto'
 import type { AIProviderConfig } from '../../../shared/types/ai'
 import type { AgentEvent, AgentRunRequest, ToolName, ToolResult } from '../../../shared/types/agent'
 import { AGENT_LIMITS } from '../../../shared/types/agent'
+import type { ComposioConfig } from '../../../shared/types/composio'
+import { COMPOSIO_STORAGE_KEY, DEFAULT_COMPOSIO_CONFIG } from '../../../shared/types/composio'
 
 const MEMORY_KEY = 'blueberry:memory'
+
+export async function getComposioConfig(): Promise<ComposioConfig> {
+  try {
+    const data = await browser.storage.local.get(COMPOSIO_STORAGE_KEY)
+    const stored = data[COMPOSIO_STORAGE_KEY] as { consumerKey?: string; baseUrl?: string; enabled?: boolean } | undefined
+    if (!stored) return DEFAULT_COMPOSIO_CONFIG
+    return {
+      enabled: stored.enabled ?? false,
+      baseUrl: stored.baseUrl || DEFAULT_COMPOSIO_CONFIG.baseUrl,
+      consumerKey: stored.consumerKey ? await decrypt(stored.consumerKey) : undefined
+    }
+  } catch {
+    return DEFAULT_COMPOSIO_CONFIG
+  }
+}
+
+export async function saveComposioConfig(cfg: ComposioConfig): Promise<void> {
+  const { encrypt } = await import('./crypto')
+  await browser.storage.local.set({
+    [COMPOSIO_STORAGE_KEY]: {
+      enabled: cfg.enabled,
+      baseUrl: cfg.baseUrl,
+      consumerKey: cfg.consumerKey ? await encrypt(cfg.consumerKey) : undefined
+    }
+  })
+}
+
+function requireComposio(cfg: ComposioConfig): ComposioConfig {
+  if (!cfg.enabled || !cfg.consumerKey) {
+    throw new Error('Composio not configured. Set the consumer key in Blueberry Settings → Composio.')
+  }
+  return cfg
+}
 
 export async function loadAgentMemory(): Promise<void> {
   try {
@@ -61,6 +98,7 @@ export async function runAgentGecko(
 ): Promise<string> {
   await loadAgentMemory()
   const cfg = await getConfig()
+  const composioCfg = await getComposioConfig()
 
   const llmChat = async (messages: Array<{ role: string; content: string }>, opts?: { maxTokens?: number }): Promise<string> => {
     return chatGecko(
@@ -118,6 +156,50 @@ export async function runAgentGecko(
       case 'extractTables': {
         const md = req.context?.markdown ?? ''
         return { ok: true, result: extractMarkdownTables(md).slice(0, 4000) }
+      }
+      case 'composioSearch': {
+        try {
+          const c = requireComposio(composioCfg)
+          const text = await composioSearchTools(c, String(args['query'] ?? req.goal))
+          return { ok: true, result: text }
+        } catch (e) {
+          return { ok: false, result: `composioSearch failed: ${String(e).slice(0, 300)}` }
+        }
+      }
+      case 'composioExecute': {
+        try {
+          const c = requireComposio(composioCfg)
+          const toolSlug = String(args['toolSlug'] ?? '')
+          let toolArgs: Record<string, unknown> = {}
+          if (typeof args['argsJson'] === 'string' && (args['argsJson'] as string).trim()) {
+            try {
+              toolArgs = JSON.parse(args['argsJson'] as string) as Record<string, unknown>
+            } catch {
+              return { ok: false, result: 'composioExecute argsJson is not valid JSON.' }
+            }
+          }
+          const account = typeof args['account'] === 'string' ? (args['account'] as string) : undefined
+          const res = await composioMultiExecute(c, [{ toolSlug, args: toolArgs, account }], req.goal)
+          return { ok: res.ok, result: res.text || '(empty result)' }
+        } catch (e) {
+          return { ok: false, result: `composioExecute failed: ${String(e).slice(0, 300)}` }
+        }
+      }
+      case 'composioConnect': {
+        try {
+          const c = requireComposio(composioCfg)
+          const toolkit = String(args['toolkit'] ?? '').toLowerCase()
+          const infos = await composioManageConnections(c, [toolkit])
+          const lines = infos.map((i) => {
+            if (i.status === 'active') return `${i.toolkit}: ACTIVE${i.accounts?.length ? ` (${i.accounts.length} account(s))` : ''}`
+            if (i.status === 'initiated' && i.redirectUrl)
+              return `${i.toolkit}: needs user action — open this link: ${i.redirectUrl} (expires ~10 min)`
+            return `${i.toolkit}: ${i.status}`
+          })
+          return { ok: true, result: lines.join('\n') }
+        } catch (e) {
+          return { ok: false, result: `composioConnect failed: ${String(e).slice(0, 300)}` }
+        }
       }
     }
   }

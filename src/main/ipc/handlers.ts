@@ -8,6 +8,7 @@ import { store } from '../utils/store'
 import type { CreateTabOptions, TabId, TabUpdatePayload } from '@shared/types/tab'
 import type { AIProviderConfig, AIProviderId, ChatRequest, PageContext } from '@shared/types/ai'
 import type { AgentRunRequest } from '@shared/types/agent'
+import type { ComposioConfig } from '@shared/types/composio'
 import { runAgentElectron } from '../ai/agentRunner'
 import { DEFAULT_URL } from '@shared/constants/defaults'
 import { normalizeUrl } from '@shared/utils/helpers'
@@ -204,6 +205,12 @@ export function registerIpcHandlers(viewManager: ViewManager): void {
       event.sender.send('ai:agentEvent', { type: 'error', message })
       return { ok: false as const, answer: message }
     }
+  })
+
+  ipcMain.handle('ai:getComposio', () => store.getComposio())
+
+  ipcMain.handle('ai:setComposio', (_e, config: ComposioConfig): void => {
+    store.setComposio(config)
   })
 
   ipcMain.handle('app:getVersion', () => app.getVersion())

@@ -26,6 +26,8 @@ export interface ElectronAPI {
     chat: (req: Parameters<IpcInvokeMap['ai:chat']>[0]) => Promise<string>
     chatStream: (req: Parameters<IpcInvokeMap['ai:chatStream']>[0]) => Promise<void>
     agentRun: (req: Parameters<IpcInvokeMap['ai:agentRun']>[0]) => Promise<ReturnType<IpcInvokeMap['ai:agentRun']>>
+    getComposio: () => Promise<ReturnType<IpcInvokeMap['ai:getComposio']>>
+    setComposio: (cfg: Parameters<IpcInvokeMap['ai:setComposio']>[0]) => Promise<void>
   }
   app: {
     getVersion: () => Promise<string>

@@ -1,6 +1,7 @@
 import type { Tab, TabId, Space, SpaceId, CreateTabOptions, TabUpdatePayload, NavigationAction } from './tab'
 import type { AIProviderConfig, AIProviderId, ChatRequest, ChatChunk, PageContext } from './ai'
 import type { AgentEvent, AgentRunRequest } from './agent'
+import type { ComposioConfig } from './composio'
 
 /**
  * IPC channel definitions — strict typing for contextBridge.
@@ -32,6 +33,8 @@ export interface IpcInvokeMap {
   'ai:chat': (req: ChatRequest) => string // non-stream fallback
   'ai:chatStream': (req: ChatRequest) => void // stream via events
   'ai:agentRun': (req: AgentRunRequest) => { ok: boolean; answer: string } // streams AgentEvent via ai:agentEvent
+  'ai:getComposio': () => ComposioConfig
+  'ai:setComposio': (config: ComposioConfig) => void
 
   // App
   'app:getVersion': () => string

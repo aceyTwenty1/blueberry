@@ -57,6 +57,32 @@ export const TOOL_DEFS: Record<ToolName, ToolDef> = {
     description: 'Extract markdown tables from the current page context.',
     argsSchema: {},
     needsConfirm: false
+  },
+  composioSearch: {
+    name: 'composioSearch',
+    description: 'Search 500+ connected apps for tools matching a task (e.g. "gmail fetch emails"). Use before composioExecute on unfamiliar tasks.',
+    argsSchema: {
+      query: { type: 'string', required: true, description: 'Natural-language task to find tools for' }
+    },
+    needsConfirm: false
+  },
+  composioExecute: {
+    name: 'composioExecute',
+    description: 'Execute a Composio app tool by slug (e.g. GMAIL_FETCH_EMAILS). Requires an ACTIVE app connection; use composioConnect first if unsure.',
+    argsSchema: {
+      toolSlug: { type: 'string', required: true, description: 'Exact tool slug from composioSearch (e.g. GMAIL_FETCH_EMAILS)' },
+      argsJson: { type: 'string', required: false, description: 'JSON object string of tool arguments (default {})' },
+      account: { type: 'string', required: false, description: 'Account id when multiple accounts are connected for the toolkit' }
+    },
+    needsConfirm: false
+  },
+  composioConnect: {
+    name: 'composioConnect',
+    description: 'Check or start an app connection (e.g. gmail, outlook, github). Returns ACTIVE status or an OAuth link the user must open.',
+    argsSchema: {
+      toolkit: { type: 'string', required: true, description: 'Toolkit slug (e.g. gmail, outlook, github, notion)' }
+    },
+    needsConfirm: false
   }
 }
 

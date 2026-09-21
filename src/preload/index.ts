@@ -65,7 +65,11 @@ const api = {
     chatStream: (req: Parameters<IpcInvokeMap['ai:chatStream']>[0]) =>
       ipcRenderer.invoke('ai:chatStream', req),
     agentRun: (req: Parameters<IpcInvokeMap['ai:agentRun']>[0]) =>
-      ipcRenderer.invoke('ai:agentRun', req) as unknown as Promise<ReturnType<IpcInvokeMap['ai:agentRun']>>
+      ipcRenderer.invoke('ai:agentRun', req) as unknown as Promise<ReturnType<IpcInvokeMap['ai:agentRun']>>,
+    getComposio: () =>
+      ipcRenderer.invoke('ai:getComposio') as unknown as Promise<ReturnType<IpcInvokeMap['ai:getComposio']>>,
+    setComposio: (cfg: Parameters<IpcInvokeMap['ai:setComposio']>[0]) =>
+      ipcRenderer.invoke('ai:setComposio', cfg)
   },
 
   app: {

@@ -12,6 +12,7 @@ import { chatGecko, chatStreamGecko } from './aiRouter'
 import { encryptProviders, decryptProviders } from './crypto'
 import { runAgentGecko } from './agent'
 import type { AgentRunRequest } from '../../../shared/types/agent'
+import type { ComposioConfig } from '../../../shared/types/composio'
 
 // Gecko WebExtension globals — types provided by @types/firefox-webext-browser (tsconfig.firefox.json)
 // `browser` is global in MV2 background; no custom shim needed.
@@ -69,6 +70,27 @@ browser.runtime.onMessage.addListener(async (msg: unknown, sender: unknown) => {
     case 'BLUEBERRY_SET_PROVIDER':
       await saveProvider(m.payload as AIProviderConfig)
       return { ok: true }
+    case 'BLUEBERRY_GET_COMPOSIO': {
+      const { getComposioConfig } = await import('./agent')
+      return getComposioConfig()
+    }
+    case 'BLUEBERRY_SET_COMPOSIO': {
+      const { saveComposioConfig } = await import('./agent')
+      await saveComposioConfig(m.payload as ComposioConfig)
+      return { ok: true }
+    }
+    case 'BLUEBERRY_COMPOSIO_TEST': {
+      const { getComposioConfig } = await import('./agent')
+      const { composioListTools } = await import('../../../ai/agent/composio')
+      try {
+        const cfg = await getComposioConfig()
+        if (!cfg.consumerKey) return { ok: false, message: 'No consumer key set.' }
+        const tools = await composioListTools({ ...cfg, enabled: true })
+        return { ok: true, message: `Connected — ${tools.length} meta tools available.` }
+      } catch (e) {
+        return { ok: false, message: String(e).slice(0, 300) }
+      }
+    }
     case 'BLUEBERRY_EXTRACT': {
       const { tabId } = m.payload as { tabId: number }
       return extractPageContext(tabId)

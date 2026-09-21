@@ -14,6 +14,7 @@ export function buildPlannerPrompt(goal: string, task: string, hasContext: boole
     `Page context attached: ${hasContext ? 'yes' : 'no'}. Memory hint: ${memoryHint || 'none'}.`,
     `Allowed tools: ${tools}.`,
     'Rules: 1-5 steps. Prefer readPage/searchMemory/recallHistory first. Use openTab ONLY if user asked to open/go somewhere.',
+    'For external apps (email, calendar, github, docs): composioConnect to check the connection, then composioSearch to find the tool, then composioExecute with exact args. NEVER invent tool slugs.',
     'Schema: {"goal":"...","steps":[{"id":"s1","label":"...","tool":"readPage","args":{}}]}',
     'Now output the JSON plan:'
   ].join('\n')

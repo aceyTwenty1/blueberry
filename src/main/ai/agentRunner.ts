@@ -10,6 +10,7 @@ import type { ViewManager } from '../windows/viewManager'
 import { store } from '../utils/store'
 import { runAgent } from '@ai/agent/executor'
 import { agentMemory } from '@ai/agent/memory'
+import { composioManageConnections, composioMultiExecute, composioSearchTools } from '@ai/agent/composio'
 import type { AIProviderConfig } from '@shared/types/ai'
 import type { AgentEvent, AgentRunRequest, ToolName, ToolResult } from '@shared/types/agent'
 import { AGENT_LIMITS } from '@shared/types/agent'
@@ -67,6 +68,14 @@ export async function runAgentElectron(
   await loadMemory()
   const cfg: AIProviderConfig =
     (req.providerId ? store.getProvider(req.providerId) : null) ?? store.getProviders()[0]!
+  const composioCfg = store.getComposio()
+
+  const requireComposio = () => {
+    if (!composioCfg.enabled || !composioCfg.consumerKey) {
+      throw new Error('Composio not configured. Set the consumer key in Blueberry Settings → Composio.')
+    }
+    return composioCfg
+  }
 
   const llmChat = async (messages: Array<{ role: string; content: string }>, opts?: { maxTokens?: number }): Promise<string> => {
     // Local sidecar path (Ollama-compatible) — same contract as fetchLocalChat in handlers.ts
@@ -122,6 +131,47 @@ export async function runAgentElectron(
       }
       case 'extractTables': {
         return { ok: true, result: extractMarkdownTables(req.context?.markdown ?? '').slice(0, 4000) }
+      }
+      case 'composioSearch': {
+        try {
+          const text = await composioSearchTools(requireComposio(), String(args['query'] ?? req.goal))
+          return { ok: true, result: text }
+        } catch (e) {
+          return { ok: false, result: `composioSearch failed: ${String(e).slice(0, 300)}` }
+        }
+      }
+      case 'composioExecute': {
+        try {
+          const toolSlug = String(args['toolSlug'] ?? '')
+          let toolArgs: Record<string, unknown> = {}
+          if (typeof args['argsJson'] === 'string' && (args['argsJson'] as string).trim()) {
+            try {
+              toolArgs = JSON.parse(args['argsJson'] as string) as Record<string, unknown>
+            } catch {
+              return { ok: false, result: 'composioExecute argsJson is not valid JSON.' }
+            }
+          }
+          const account = typeof args['account'] === 'string' ? (args['account'] as string) : undefined
+          const res = await composioMultiExecute(requireComposio(), [{ toolSlug, args: toolArgs, account }], req.goal)
+          return { ok: res.ok, result: res.text || '(empty result)' }
+        } catch (e) {
+          return { ok: false, result: `composioExecute failed: ${String(e).slice(0, 300)}` }
+        }
+      }
+      case 'composioConnect': {
+        try {
+          const toolkit = String(args['toolkit'] ?? '').toLowerCase()
+          const infos = await composioManageConnections(requireComposio(), [toolkit])
+          const lines = infos.map((i) => {
+            if (i.status === 'active') return `${i.toolkit}: ACTIVE${i.accounts?.length ? ` (${i.accounts.length} account(s))` : ''}`
+            if (i.status === 'initiated' && i.redirectUrl)
+              return `${i.toolkit}: needs user action — open this link: ${i.redirectUrl} (expires ~10 min)`
+            return `${i.toolkit}: ${i.status}`
+          })
+          return { ok: true, result: lines.join('\n') }
+        } catch (e) {
+          return { ok: false, result: `composioConnect failed: ${String(e).slice(0, 300)}` }
+        }
       }
     }
   }
