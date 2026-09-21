@@ -8,14 +8,14 @@
     <link rel="stylesheet" href="../theme/tokens.css" />
     <style>
       * { font-family: Inter, system-ui, -apple-system, sans-serif; box-sizing: border-box; }
-      body { width: 360px; margin: 0; background: #09090b; color: #fafafa; overflow: hidden; }
+      body { width: 360px; margin: 0; background: var(--bb-bg); color: #fafafa; overflow: hidden; }
       ::-webkit-scrollbar { width: 4px; }
-      ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 999px; }
+      ::-webkit-scrollbar-thumb { background: var(--bb-border-strong); border-radius: 999px; }
       @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.6 } }
       .bg-blueberry { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%); }
       .glass { background: rgba(24,24,27,0.8); backdrop-filter: blur(16px); }
       .card-hover { transition: all 0.18s ease; }
-      .card-hover:hover { transform: translateY(-1px); border-color: #3f3f46 !important; box-shadow: 0 8px 16px rgba(0,0,0,0.3); }
+      .card-hover:hover { transform: translateY(-1px); border-color: var(--bb-border-strong) !important; box-shadow: 0 8px 16px rgba(0,0,0,0.3); }
       .btn-primary { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); box-shadow: 0 4px 12px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.2); transition: all 0.18s; }
       .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 16px rgba(99,102,241,0.5), inset 0 1px 0 rgba(255,255,255,0.2); }
       .btn-primary:active { transform: translateY(0); }
@@ -23,7 +23,7 @@
   </head>
   <body>
     <!-- Header with mesh gradient -->
-    <div style="position:relative; padding:16px; overflow:hidden; border-bottom:1px solid rgba(39,39,42,0.6); background: radial-gradient(400px 120px at 0% 0%, rgba(99,102,241,0.15), transparent 60%), radial-gradient(300px 100px at 100% 0%, rgba(236,72,153,0.1), transparent 60%), #09090b;">
+    <div style="position:relative; padding:16px; overflow:hidden; border-bottom:1px solid rgba(39,39,42,0.6); background: radial-gradient(400px 120px at 0% 0%, rgba(99,102,241,0.15), transparent 60%), radial-gradient(300px 100px at 100% 0%, rgba(236,72,153,0.1), transparent 60%), var(--bb-bg);">
       <div style="position:relative; display:flex; align-items:center; gap:12px;">
         <div class="bg-blueberry" style="width:40px; height:40px; border-radius:12px; display:grid; place-items:center; color:#fff; font-weight:800; font-size:18px; box-shadow:0 8px 16px rgba(99,102,241,0.35); border:1px solid rgba(255,255,255,0.15);">◐</div>
         <div style="flex:1;">
@@ -59,30 +59,30 @@
     <!-- Quick Actions Grid -->
     <div style="padding:0 14px 14px;">
       <div style="font-size:11px; font-weight:700; letter-spacing:0.08em; color:#71717a; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
-        <span style="width:14px; height:1px; background:#3f3f46;"></span>
+        <span style="width:14px; height:1px; background:var(--bb-border-strong);"></span>
         QUICK ACTIONS
         <span style="margin-left:auto; font-weight:500; color:#52525b; letter-spacing:0; text-transform:none; font-size:11px;">4</span>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-        <button data-action="summarize" class="card-hover" style="text-align:left; padding:12px; border-radius:14px; background:#18181b; border:1px solid #27272a; cursor:pointer; position:relative; overflow:hidden;">
+        <button data-action="summarize" class="card-hover" style="text-align:left; padding:12px; border-radius:14px; background:var(--bb-surface); border:1px solid var(--bb-border); cursor:pointer; position:relative; overflow:hidden;">
           <div style="width:28px; height:28px; border-radius:9px; background:linear-gradient(135deg, #6366f1, #8b5cf6); display:grid; place-items:center; color:#fff; font-size:13px; box-shadow:0 4px 10px rgba(99,102,241,0.25);">◐</div>
           <div style="margin-top:10px; font-size:12px; font-weight:700; color:#fafafa; letter-spacing:-0.01em;">Summarize</div>
           <div style="font-size:11px; color:#71717a;">Bullet points</div>
           <span style="position:absolute; top:10px; right:10px; font-size:11px; color:#52525b;">↗</span>
         </button>
-        <button data-action="extract" class="card-hover" style="text-align:left; padding:12px; border-radius:14px; background:#18181b; border:1px solid #27272a; cursor:pointer; position:relative; overflow:hidden;">
+        <button data-action="extract" class="card-hover" style="text-align:left; padding:12px; border-radius:14px; background:var(--bb-surface); border:1px solid var(--bb-border); cursor:pointer; position:relative; overflow:hidden;">
           <div style="width:28px; height:28px; border-radius:9px; background:linear-gradient(135deg, #10b981, #06b6d4); display:grid; place-items:center; color:#fff; font-size:13px;">▦</div>
           <div style="margin-top:10px; font-size:12px; font-weight:700; color:#fafafa;">Extract</div>
           <div style="font-size:11px; color:#71717a;">Tables → MD</div>
           <span style="position:absolute; top:10px; right:10px; font-size:11px; color:#52525b;">↗</span>
         </button>
-        <button data-action="pricing" class="card-hover" style="text-align:left; padding:12px; border-radius:14px; background:#18181b; border:1px solid #27272a; cursor:pointer; position:relative;">
+        <button data-action="pricing" class="card-hover" style="text-align:left; padding:12px; border-radius:14px; background:var(--bb-surface); border:1px solid var(--bb-border); cursor:pointer; position:relative;">
           <div style="width:28px; height:28px; border-radius:9px; background:linear-gradient(135deg, #f59e0b, #f97316); display:grid; place-items:center; color:#fff;">◈</div>
           <div style="margin-top:10px; font-size:12px; font-weight:700; color:#fafafa;">Pricing</div>
           <div style="font-size:11px; color:#71717a;">Find plans</div>
           <span style="position:absolute; top:10px; right:10px; font-size:11px; color:#52525b;">↗</span>
         </button>
-        <button data-action="vertical" class="card-hover" style="text-align:left; padding:12px; border-radius:14px; background:#18181b; border:1px solid #27272a; cursor:pointer; position:relative;">
+        <button data-action="vertical" class="card-hover" style="text-align:left; padding:12px; border-radius:14px; background:var(--bb-surface); border:1px solid var(--bb-border); cursor:pointer; position:relative;">
           <div style="width:28px; height:28px; border-radius:9px; background:linear-gradient(135deg, #ec4899, #8b5cf6); display:grid; place-items:center; color:#fff;">⬍</div>
           <div style="margin-top:10px; font-size:12px; font-weight:700; color:#fafafa;">Vertical Tabs</div>
           <div style="font-size:11px; color:#71717a;">Toggle layout</div>
@@ -92,13 +92,13 @@
     </div>
 
     <!-- Footer -->
-    <div style="padding:10px 14px; border-top:1px solid #27272a; display:flex; align-items:center; justify-content:space-between; background:#09090b;">
+    <div style="padding:10px 14px; border-top:1px solid var(--bb-border); display:flex; align-items:center; justify-content:space-between; background:var(--bb-bg);">
       <div style="display:flex; align-items:center; gap:8px; font-size:11px; color:#52525b;">
         <span style="display:flex; align-items:center; gap:4px;"><span style="width:6px; height:6px; border-radius:999px; background:#10b981;"></span> Local</span>
         <span>•</span>
         <span>Ollama • OpenAI</span>
       </div>
-      <button id="openSettings" style="font-size:11px; font-weight:600; color:#71717a; background:transparent; border:1px solid #27272a; padding:5px 9px; border-radius:8px; cursor:pointer;">Settings ⚙</button>
+      <button id="openSettings" style="font-size:11px; font-weight:600; color:#71717a; background:transparent; border:1px solid var(--bb-border); padding:5px 9px; border-radius:8px; cursor:pointer;">Settings ⚙</button>
     </div>
 
     <script src="popup.js"></script>

@@ -43,6 +43,7 @@
   --bb-live: #34d399;
 
   /* Geometry — pills first, cards second */
+  --bb-radius: 12px;
   --bb-radius-pill: 999px;
   --bb-radius-card: 16px;
   --bb-radius-tile: 12px;

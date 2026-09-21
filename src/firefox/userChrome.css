@@ -23,23 +23,12 @@
   --bb-orb: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
   --bb-radius: 12px;
   --bb-radius-pill: 999px;
-
-  /* Legacy aliases (do not use in new code) */
-  --blueberry-bg: var(--bb-bg);
-  --blueberry-surface: var(--bb-surface);
-  --blueberry-surface-2: var(--bb-surface-2);
-  --blueberry-border: var(--bb-border);
-  --blueberry-border-strong: var(--bb-border-strong);
-  --blueberry-accent: var(--bb-accent);
-  --blueberry-accent-2: var(--bb-accent-2);
-  --blueberry-radius: var(--bb-radius);
-  --blueberry-radius-pill: var(--bb-radius-pill);
 }
 
 /* ── Window & Toolbox ── */
 #navigator-toolbox {
-  background: var(--blueberry-bg) !important;
-  border-bottom: 1px solid var(--blueberry-border) !important;
+  background: var(--bb-bg) !important;
+  border-bottom: 1px solid var(--bb-border) !important;
 }
 
 /* Hide horizontal tab bar entirely (Arc-style vertical tabs) */
@@ -55,7 +44,7 @@
   padding: 0 !important;
 }
 #nav-bar { 
-  background: var(--blueberry-bg) !important;
+  background: var(--bb-bg) !important;
   border-top: none !important;
   box-shadow: none !important;
   padding: 6px 8px !important;
@@ -67,9 +56,9 @@
   --urlbar-height: 34px !important;
 }
 #urlbar-background {
-  background: var(--blueberry-surface) !important;
-  border: 1px solid var(--blueberry-border) !important;
-  border-radius: var(--blueberry-radius-pill) !important;
+  background: var(--bb-surface) !important;
+  border: 1px solid var(--bb-border) !important;
+  border-radius: var(--bb-radius-pill) !important;
   box-shadow: 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
   transition: all 0.18s ease !important;
 }
@@ -97,8 +86,8 @@
 }
 .toolbarbutton-1:hover,
 #PanelUI-menu-button:hover {
-  background: var(--blueberry-surface) !important;
-  border-color: var(--blueberry-border) !important;
+  background: var(--bb-surface) !important;
+  border-color: var(--bb-border) !important;
 }
 .toolbarbutton-icon {
   border-radius: 8px !important;
@@ -108,8 +97,8 @@
 #sidebar-box {
   min-width: 280px !important;
   max-width: 420px !important;
-  background: var(--blueberry-bg) !important;
-  border-right: 1px solid var(--blueberry-border) !important;
+  background: var(--bb-bg) !important;
+  border-right: 1px solid var(--bb-border) !important;
   border-radius: 0 !important;
   overflow: hidden !important;
   /* subtle inner shadow */
@@ -117,12 +106,12 @@
 }
 #sidebar {
   border-radius: 0 !important;
-  background: var(--blueberry-bg) !important;
+  background: var(--bb-bg) !important;
 }
 #sidebar-header {
   background: rgba(24,24,27,0.9) !important;
   backdrop-filter: blur(16px) !important;
-  border-bottom: 1px solid var(--blueberry-border) !important;
+  border-bottom: 1px solid var(--bb-border) !important;
   padding: 8px 10px !important;
 }
 #sidebar-title {
@@ -133,14 +122,14 @@
 /* Sidebar splitter */
 #sidebar-splitter {
   width: 1px !important;
-  background: var(--blueberry-border) !important;
+  background: var(--bb-border) !important;
   border: none !important;
 }
 
 /* ── Bookmarks Bar — Subtle ── */
 #PersonalToolbar {
-  background: var(--blueberry-bg) !important;
-  border-bottom: 1px solid var(--blueberry-border) !important;
+  background: var(--bb-bg) !important;
+  border-bottom: 1px solid var(--bb-border) !important;
   padding: 4px 8px !important;
 }
 .bookmark-item {
@@ -150,7 +139,7 @@
 
 /* ── Findbar, Panels ── */
 #browser {
-  background: var(--blueberry-bg) !important;
+  background: var(--bb-bg) !important;
 }
 .browserContainer {
   background: #0a0a0f !important;
@@ -164,12 +153,12 @@
 
 /* ── Extensions Button — Blueberry Accent ── */
 #unified-extensions-button {
-  background: var(--blueberry-surface) !important;
-  border: 1px solid var(--blueberry-border) !important;
+  background: var(--bb-surface) !important;
+  border: 1px solid var(--bb-border) !important;
   border-radius: 10px !important;
 }
 #unified-extensions-button:hover {
-  border-color: var(--blueberry-border-strong) !important;
+  border-color: var(--bb-border-strong) !important;
 }
 
 /* ── Window Controls (macOS traffic lights spacing) ── */
@@ -192,8 +181,8 @@ menupopup, panel {
 /* ── Vertical Tabs Tweaks (when sidebar.verticalTabs enabled, Firefox 131+) ── */
 @media (-moz-bool-pref: "sidebar.verticalTabs") {
   #vertical-tabs {
-    background: var(--blueberry-bg) !important;
-    border-right: 1px solid var(--blueberry-border) !important;
+    background: var(--bb-bg) !important;
+    border-right: 1px solid var(--bb-border) !important;
   }
 }
 
